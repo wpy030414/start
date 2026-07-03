@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>开始</title>
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.16);
+      --glass-border: rgba(255, 255, 255, 0.38);
+      --glass-shine: rgba(255, 255, 255, 0.45);
+      --glass-shadow: 0 18px 52px rgba(0, 0, 0, 0.22),
+                       0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+                       0 1px 0 0 rgba(255, 255, 255, 0.48) inset;
+      --text: rgba(255, 255, 255, 0.96);
+      --text-dim: rgba(255, 255, 255, 0.62);
+      --accent: rgba(170, 220, 255, 0.38);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #050505;
+      color: var(--text);
+    }
+
+    #bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #000;
+    }
+
+    #bg-layer img,
+    #bg-layer video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.05);
+    }
+
+    #bg-layer::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05) 0%, transparent 45%),
+        radial-gradient(ellipse at 70% 80%, rgba(0,0,0,0.4) 0%, transparent 55%),
+        radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.42) 100%);
+      mix-blend-mode: overlay;
+    }
+
+    #top-third {
+      position: relative;
+      z-index: 10;
+      height: 33.333vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+    }
+
+    .search-shell {
+      position: relative;
+      width: min(700px, 94vw);
+      transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .search-shell:hover {
+      transform: translateY(-1px);
+    }
+
+    .search-shell:focus-within {
+      transform: translateY(-2px) scale(1.005);
+    }
+
+    .search-card {
+      position: relative;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      padding: 6px 12px 6px 26px;
+    }
+
+    .search-card-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%);
+      backdrop-filter: blur(10px) saturate(180%);
+      -webkit-backdrop-filter: blur(10px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      overflow: hidden;
+      transition: box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+      z-index: 1;
+    }
+
+    /* 柔和扫光 */
+    .search-card-bg::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -80%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
+      transform: skewX(-20deg);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .search-card:hover .search-card-bg::before,
+    .search-card:focus-within .search-card-bg::before {
+      opacity: 1;
+      animation: soft-shine 2.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+    }
+
+    .search-shell:not(:hover):not(:focus-within) .search-card-bg::before {
+      animation: none;
+    }
+
+    @keyframes soft-shine {
+      0% { left: -80%; }
+      100% { left: 130%; }
+    }
+
+    .search-card-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 42%);
+      opacity: 0.7;
+    }
+
+    .search-card:focus-within .search-card-bg {
+      border-color: rgba(255, 255, 255, 0.50);
+      box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.24),
+        0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+        0 0 16px var(--accent),
+        0 1px 0 0 rgba(255, 255, 255, 0.50) inset;
+    }
+
+    #search-input {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 17px;
+      letter-spacing: 0.3px;
+      font-weight: 400;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+
+    #search-input::placeholder {
+      color: var(--text-dim);
+      transition: color 0.25s ease;
+    }
+
+    .search-card:focus-within #search-input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+
+    .engine-buttons {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-left: 4px;
+    }
+
+    .engine-btn {
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 28%, rgba(255,255,255,0.22), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.04) 100%);
+      backdrop-filter: blur(14px) saturate(160%);
+      -webkit-backdrop-filter: blur(14px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.28),
+        0 5px 14px rgba(0,0,0,0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.25s ease,
+                  box-shadow 0.25s ease;
+      position: relative;
+    }
+
+    .engine-btn::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: conic-gradient(from 180deg, transparent, rgba(255,255,255,0.14), transparent 35%);
+      opacity: 0;
+      transform: rotate(0deg);
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      clip-path: circle(50% at 50% 50%);
+    }
+
+    .engine-btn:hover {
+      transform: scale(1.08) translateY(-1px);
+      background:
+        radial-gradient(circle at 35% 28%, rgba(255,255,255,0.30), rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.05) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.34),
+        0 7px 20px rgba(0,0,0,0.18),
+        0 0 12px rgba(255,255,255,0.06);
+    }
+
+    .engine-btn:hover::before {
+      opacity: 1;
+      animation: spin-gloss 3.5s linear infinite;
+    }
+
+    .engine-btn:active {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+
+    @keyframes spin-gloss {
+      to { transform: rotate(360deg); }
+    }
+
+    .engine-btn img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      pointer-events: none;
+      filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    .engine-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 6px rgba(255,255,255,0.45);
+      z-index: 5;
+    }
+
+    /* 快捷链接模态框 */
+    #shortcuts-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    #shortcuts-modal.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .shortcuts-panel {
+      position: relative;
+      width: min(880px, 92vw);
+      max-height: 84vh;
+      overflow: hidden;
+      border-radius: 32px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 100%);
+      backdrop-filter: blur(40px) saturate(200%);
+      -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.40);
+      box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.45) inset;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shortcuts-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 32px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 45%);
+      opacity: 0.6;
+    }
+
+    .shortcuts-form {
+      position: relative;
+      padding: 28px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 2;
+    }
+
+    .shortcuts-form input {
+      flex: 1;
+      min-width: 180px;
+      height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.30);
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .shortcuts-form input::placeholder {
+      color: rgba(255,255,255,0.50);
+    }
+
+    .shortcuts-form input:focus {
+      border-color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.14);
+    }
+
+    .shortcuts-add {
+      height: 46px;
+      padding: 0 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28), rgba(255,255,255,0.10) 60%);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .shortcuts-add:hover {
+      transform: translateY(-1px);
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.36), rgba(255,255,255,0.14) 60%);
+    }
+
+    .shortcuts-grid {
+      position: relative;
+      padding: 8px 28px 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 16px;
+      overflow-y: auto;
+      z-index: 2;
+    }
+
+    .shortcut-item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 66px;
+      padding: 11px 7px;
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10), rgba(255,255,255,0.04) 65%);
+      backdrop-filter: blur(14px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.10),
+        0 4px 10px rgba(0,0,0,0.10);
+      cursor: pointer;
+      text-decoration: none;
+      flex: 0 0 auto;
+      opacity: 0.55;
+      /* 放大动作撑开邻居（transform 用于视觉），用 transition 缓动平滑位移 */
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.25s ease,
+                  border-color 0.25s ease,
+                  box-shadow 0.25s ease,
+                  opacity 0.25s ease;
+      will-change: transform;
+      /* 放大时从中心出发，这样两侧邻居位移相近 */
+      transform-origin: center center;
+      z-index: 1;
+    }
+
+    /* hover 项自身：放大 + z-index 最高 */
+    .shortcut-item:hover {
+      opacity: 1;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.22), rgba(255,255,255,0.08) 65%);
+      border-color: rgba(255,255,255,0.30);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.20),
+        0 8px 18px rgba(0,0,0,0.14);
+      z-index: 3;
+    }
+
+    /* 由 JS 根据 hover 项位置动态给每个 shortcut-item 注入 --tx 位移，
+       让 hover 项像磁铁把邻居"撑开"一样挤走 */
+    .shortcut-item[data-tx] {
+      transform: translateX(var(--tx)) scale(var(--sc, 1));
+    }
+
+    /* 拖拽中：原始 item 透明，让别人占位 → 列表立刻"塌陷" */
+    .shortcut-item.dragging-source {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+    /* 拖拽视觉代理：固定位置，跟随光标 */
+    .shortcut-proxy {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 9999;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 7px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+      backdrop-filter: blur(14px) saturate(170%);
+      -webkit-backdrop-filter: blur(14px) saturate(170%);
+      color: #fff;
+      cursor: grabbing;
+      pointer-events: none;
+      opacity: 0.95;
+      transform-origin: center center;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255,255,255,0.28);
+      transition: opacity 0.18s ease;
+      will-change: transform;
+    }
+    .shortcut-proxy .shortcut-icon {
+      filter: none;
+      opacity: 0.95;
+    }
+    .shortcut-proxy .shortcut-title {
+      color: rgba(255,255,255,0.95);
+    }
+    /* 拖拽时全局 shortcut-transition 改成 transition: none（除了代理节点自身） */
+    body.is-dragging-shortcut .shortcut-item:not(.shortcut-proxy):not(.dragging-source) {
+      transition: none !important;
+    }
+
+    .shortcut-item:active {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+
+    .shortcut-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      object-fit: contain;
+      filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+      pointer-events: none;
+    }
+
+    #shortcuts-showcase .shortcut-icon {
+      filter: none;
+      opacity: 0.75;
+      transition: opacity 0.25s ease;
+    }
+
+    #shortcuts-showcase .shortcut-item:hover .shortcut-icon {
+      opacity: 1;
+    }
+
+    .shortcut-title {
+      width: 100%;
+      max-width: 100%;
+      display: block;
+      color: rgba(255,255,255,0.70);
+      font-size: 11px;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      pointer-events: none;
+      transition: color 0.25s ease;
+    }
+
+    .shortcut-item:hover .shortcut-title {
+      color: rgba(255,255,255,0.96);
+    }
+
+    .shortcuts-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px 0;
+      color: rgba(255,255,255,0.50);
+      font-size: 15px;
+    }
+
+    /* 首页快捷链接陈列区：视觉居下 1/3，放大时向外溢出 */
+    #shortcuts-showcase {
+      position: fixed;
+      left: 50%;
+      bottom: calc(33.333vh - 60px);
+      transform: translateX(-50%);
+      z-index: 10;
+      width: min(560px, 94vw);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 22px;
+      padding: 12px 20px;
+      pointer-events: none;
+    }
+
+    #shortcuts-showcase:empty {
+      display: none;
+    }
+
+    /* 启用的子节点要重开 pointer-events，因为 default 是 none */
+    #shortcuts-showcase > * {
+      pointer-events: auto;
+    }
+
+    /* ---------- 帮助按钮 ---------- */
+    .help-btn {
+      position: fixed;
+      right: 26px;
+      bottom: 26px;
+      z-index: 50;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.30);
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.03) 100%);
+      backdrop-filter: blur(14px) saturate(170%);
+      -webkit-backdrop-filter: blur(14px) saturate(170%);
+      color: rgba(255, 255, 255, 0.92);
+      font-family: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.30),
+        0 8px 22px rgba(0, 0, 0, 0.22);
+      padding: 0;
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.25s ease,
+                  box-shadow 0.25s ease,
+                  border-color 0.25s ease,
+                  width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .help-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 45%);
+      transition: opacity 0.25s ease;
+    }
+
+    .help-btn-icon {
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .help-btn-trash {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: rgba(255, 255, 255, 0.96);
+      white-space: nowrap;
+      opacity: 0;
+      transform: scale(0.7);
+      transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .help-btn-trash svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+
+    .help-btn:hover {
+      transform: scale(1.07) translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.46);
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.10) 55%, rgba(255, 255, 255, 0.05) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.36),
+        0 10px 28px rgba(0, 0, 0, 0.26),
+        0 0 14px rgba(170, 220, 255, 0.14);
+    }
+
+    .help-btn:active {
+      transform: scale(0.96);
+      transition-duration: 0.08s;
+    }
+
+    .help-btn:focus {
+      outline: none;
+    }
+
+    /* 拖拽态：当有 shortcut-item 被拖起时，按钮立即变成垃圾桶 */
+    .help-btn.dragging-trash {
+      width: 132px;
+      border-radius: 999px;
+      border-color: rgba(255, 90, 90, 0.55);
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255, 90, 110, 0.50), rgba(180, 40, 60, 0.30) 60%, rgba(120, 20, 40, 0.22) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 180, 190, 0.30),
+        0 10px 28px rgba(140, 20, 40, 0.32),
+        0 0 16px rgba(255, 80, 100, 0.22);
+      cursor: copy;
+    }
+
+    .help-btn.dragging-trash::before {
+      opacity: 0;
+    }
+
+    .help-btn.dragging-trash .help-btn-icon {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+
+    .help-btn.dragging-trash .help-btn-trash {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* 拖拽悬停到垃圾桶上时进一步高亮 */
+    .help-btn.drop-target {
+      transform: scale(1.08);
+      border-color: rgba(255, 120, 120, 0.75);
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255, 110, 130, 0.62), rgba(200, 50, 70, 0.38) 60%, rgba(140, 25, 45, 0.28) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 200, 210, 0.38),
+        0 12px 34px rgba(160, 25, 45, 0.38),
+        0 0 20px rgba(255, 90, 110, 0.30);
+    }
+
+    .help-btn.drop-target .help-btn-icon {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+
+    .help-btn.drop-target .help-btn-trash {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* 帮助弹出气泡 */
+    .help-popover {
+      position: fixed;
+      right: 26px;
+      bottom: 80px;
+      z-index: 60;
+      width: min(260px, calc(100vw - 32px));
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      box-shadow:
+        0 18px 44px rgba(0, 0, 0, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.30) inset;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 13px;
+      line-height: 1.55;
+      padding: 14px 16px 16px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px) scale(0.97);
+      transform-origin: calc(100% - 21px) calc(100% + 14px);
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0.22s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .help-popover.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0s;
+    }
+
+    .help-popover::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 42%);
+    }
+
+    .help-popover-arrow {
+      position: absolute;
+      right: 13px;
+      bottom: -7px;
+      width: 14px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.12);
+      border-right: 1px solid rgba(255, 255, 255, 0.28);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      transform: rotate(45deg);
+    }
+
+    .help-popover-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .help-popover-content strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      margin-bottom: 9px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    .help-popover-content ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .help-popover-content li {
+      color: rgba(255, 255, 255, 0.86);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    .help-popover-content b {
+      color: rgba(255, 255, 255, 0.96);
+      font-weight: 600;
+    }
+
+    .help-popover-content kbd {
+      display: inline-block;
+      min-width: 16px;
+      padding: 0 5px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="bg-layer"></div>
+
+  <section id="top-third">
+    <div class="search-shell" id="search-shell">
+      <div class="search-card" id="search-card">
+        <div class="search-card-bg"></div>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="搜索..."
+          autocomplete="off"
+        />
+        <div class="engine-buttons">
+          <button class="engine-btn active" data-engine="qianwen" title="千问">
+            <img src="https://img.alicdn.com/imgextra/i2/O1CN01taBbMS1CfyJoOt0lB_!!6000000000109-2-tps-80-80.png" alt="千问" />
+          </button>
+          <button class="engine-btn" data-engine="bing" title="必应">
+            <img src="https://www.bing.com/favicon.ico" alt="必应" />
+          </button>
+          <button class="engine-btn" data-engine="bilibili" title="哔哩哔哩">
+            <img src="https://www.bilibili.com/favicon.ico" alt="哔哩哔哩" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="shortcuts-showcase"></section>
+
+  <div id="shortcuts-modal">
+    <div class="shortcuts-panel">
+      <div class="shortcuts-form">
+        <input type="text" id="shortcut-title" placeholder="标题（可选）" autocomplete="off" />
+        <input type="text" id="shortcut-url" placeholder="链接，例如 https://example.com" autocomplete="off" />
+        <button class="shortcuts-add" id="shortcut-add">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*,video/*" hidden />
+
+  <button id="help-btn" class="help-btn" title="使用帮助" aria-label="使用帮助">
+    <span class="help-btn-icon">?</span>
+    <span class="help-btn-trash" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18"></path>
+        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+        <path d="M10 11v6"></path>
+        <path d="M14 11v6"></path>
+      </svg>
+      <span>拖到这里删除</span>
+    </span>
+  </button>
+  <div id="help-popover" class="help-popover" aria-hidden="true">
+    <div class="help-popover-arrow"></div>
+    <div class="help-popover-content">
+      <strong>常用功能</strong>
+      <ul>
+        <li><b>搜索</b>：输入关键词，选择引擎按钮后回车。</li>
+        <li><b>搜索历史</b>：文本框聚焦后按 ↑/↓ 方向键浏览。</li>
+        <li><b>快捷链接</b>：按 <kbd>+</kbd> 添加；拖到右下角图标上删除。</li>
+        <li><b>背景</b>：双击空白处选择图片或视频。</li>
+        <li><b>背景历史</b>：← / → 键浏览本地图库；Enter 设为当前项。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const engines = {
+        qianwen: {
+          name: '千问',
+          url: q => `https://tongyi.aliyun.com/qianwen/?query=${encodeURIComponent(q)}`
+        },
+        bing: {
+          name: '必应',
+          url: q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`
+        },
+        bilibili: {
+          name: '哔哩哔哩',
+          url: q => `https://search.bilibili.com/all?keyword=${encodeURIComponent(q)}`
+        }
+      };
+
+      const input = document.getElementById('search-input');
+      const btns = document.querySelectorAll('.engine-btn');
+      const fileInput = document.getElementById('file-input');
+      const bgLayer = document.getElementById('bg-layer');
+      const searchCard = document.getElementById('search-card');
+      const helpBtn = document.getElementById('help-btn');
+      const helpPopover = document.getElementById('help-popover');
+
+      const modal = document.getElementById('shortcuts-modal');
+      const shortcutTitle = document.getElementById('shortcut-title');
+      const shortcutUrl = document.getElementById('shortcut-url');
+      const shortcutAdd = document.getElementById('shortcut-add');
+      const shortcutsShowcase = document.getElementById('shortcuts-showcase');
+
+      const HISTORY_KEY = 'homepage_search_history';
+      const MAX_HISTORY = 100;
+
+      const MAX_BG_HISTORY = 5;
+      const SHORTCUTS_KEY = 'homepage_shortcuts';
+      const MAX_SHORTCUTS = 6;
+
+      let shortcuts = loadShortcuts();
+
+      function loadShortcuts() {
+        try {
+          return JSON.parse(localStorage.getItem(SHORTCUTS_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveShortcuts() {
+        localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(shortcuts));
+      }
+
+      function getFaviconUrl(url) {
+        try {
+          const u = new URL(url);
+          return `https://to.ahkdxx.cn/${u.origin}/favicon.ico`;
+        } catch {
+          return '';
+        }
+      }
+
+      function getPageProxyUrl(url) {
+        return 'https://to.ahkdxx.cn/' + url;
+      }
+
+      function getHostname(url) {
+        try {
+          return new URL(url).hostname.replace(/^www\./, '');
+        } catch {
+          return url;
+        }
+      }
+
+      const renderShowcase = function () {
+        shortcutsShowcase.innerHTML = '';
+        if (shortcuts.length === 0) return;
+        shortcuts.forEach((item, index) => {
+          const a = document.createElement('a');
+          a.className = 'shortcut-item';
+          a.href = item.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.setAttribute('draggable', 'true');
+          a.dataset.index = String(index);
+          const img = document.createElement('img');
+          img.className = 'shortcut-icon';
+          img.src = item.favicon || getFaviconUrl(item.url);
+          img.alt = item.title;
+          img.onerror = () => { img.style.display = 'none'; };
+          const span = document.createElement('span');
+          span.className = 'shortcut-title';
+          span.textContent = item.title || getHostname(item.url);
+          a.appendChild(img);
+          a.appendChild(span);
+          shortcutsShowcase.appendChild(a);
+        });
+        attachDockExpansion();
+      };
+
+      /* dock 风推开：当光标在某一项 hover 时，按距离分别给：
+         - hover 项 scale 1.4，邻居分别按距离给 scale(1.2 / 1.05) 并横向位移，
+           让它们真的被"撑开"而不是互相遮盖。 */
+      let dockRaf = null;
+      function attachDockExpansion() {
+        const HOVER_SCALE = 1.4;
+        const NEAR_SCALE = 1.2;
+        const FAR_SCALE = 1.05;
+        const ITEM_W = 66;       // 与 CSS 中的 width 对齐
+        const NEAR_PUSH = ITEM_W * 0.5;   // 紧邻推开距离 (px)
+        const FAR_PUSH  = ITEM_W * 0.22;  // 远邻轻推距离 (px)
+
+        function apply(hoverIdx) {
+          if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
+          dockRaf = requestAnimationFrame(() => {
+            const live = shortcutsShowcase.children;
+            for (let i = 0; i < live.length; i++) {
+              const dom = live[i];
+              if (hoverIdx == null) {
+                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+                dom.style.removeProperty('--tx');
+                dom.style.removeProperty('--sc');
+                continue;
+              }
+              const d = Math.abs(i - hoverIdx);
+              let tx = 0;
+              let sc = 1;
+              if (i === hoverIdx) {
+                sc = HOVER_SCALE;
+              } else if (d === 1) {
+                sc = NEAR_SCALE;
+                tx = (i < hoverIdx ? -1 : 1) * NEAR_PUSH;
+              } else if (d === 2) {
+                sc = FAR_SCALE;
+                tx = (i < hoverIdx ? -1 : 1) * FAR_PUSH;
+              }
+              if (tx === 0 && sc === 1) {
+                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+                dom.style.removeProperty('--tx');
+                dom.style.removeProperty('--sc');
+              } else {
+                dom.setAttribute('data-tx', '');
+                dom.style.setProperty('--tx', `${tx}px`);
+                dom.style.setProperty('--sc', String(sc));
+              }
+            }
+          });
+        }
+
+        const fresh = Array.from(shortcutsShowcase.children);
+        fresh.forEach((el, i) => {
+          el.addEventListener('mouseenter', () => {
+            // 拖拽期间不要响应 hover 动画
+            if (document.body.classList.contains('is-dragging-shortcut')) return;
+            if (el.classList.contains('dragging-source')) return;
+            apply(i);
+          });
+        });
+      }
+
+      // 鼠标离开整个 dock 区域时，一次性复位所有 item
+      shortcutsShowcase.addEventListener('mouseleave', () => {
+        if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
+        const live = shortcutsShowcase.children;
+        for (let i = 0; i < live.length; i++) {
+          const dom = live[i];
+          if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+          dom.style.removeProperty('--tx');
+          dom.style.removeProperty('--sc');
+        }
+      });
+
+      function openShortcutsModal() {
+        if (shortcuts.length >= MAX_SHORTCUTS) return;
+        modal.classList.add('open');
+        shortcutUrl.focus();
+      }
+
+      function closeShortcutsModal() {
+        modal.classList.remove('open');
+        shortcutTitle.value = '';
+        shortcutUrl.value = '';
+      }
+
+      async function tryFetchTitleAndFavicon(url) {
+        try {
+          const proxyUrl = getPageProxyUrl(url);
+          const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(5000) });
+          if (!res.ok) return { title: '', favicon: getFaviconUrl(url) };
+          const html = await res.text();
+          const titleMatch = html.match(/<title[^>]*>([^]*?)<\/title>/i);
+          const title = titleMatch ? titleMatch[1].trim() : '';
+          let favicon = getFaviconUrl(url);
+          const linkMatch = html.match(/<link[^>]*rel=["'](?:shortcut\s+icon|icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["'][^>]*>/i)
+            || html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:shortcut\s+icon|icon|apple-touch-icon)["'][^>]*>/i);
+          if (linkMatch) {
+            let raw = linkMatch[1];
+            if (raw.startsWith('//')) raw = 'https:' + raw;
+            else if (raw.startsWith('/')) raw = new URL(url).origin + raw;
+            else if (!/^https?:\/\//i.test(raw)) raw = new URL(url).href.replace(/\/[^\/]*$/, '/') + raw;
+            favicon = 'https://to.ahkdxx.cn/' + raw;
+          }
+          return { title, favicon };
+        } catch {
+          return { title: '', favicon: getFaviconUrl(url) };
+        }
+      }
+
+      async function addShortcut() {
+        if (shortcuts.length >= MAX_SHORTCUTS) {
+          closeShortcutsModal();
+          return;
+        }
+        let url = shortcutUrl.value.trim();
+        const title = shortcutTitle.value.trim();
+        if (!url) return;
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        let finalTitle = title;
+        let favicon = getFaviconUrl(url);
+        if (!finalTitle) {
+          const fetched = await tryFetchTitleAndFavicon(url);
+          finalTitle = fetched.title;
+          if (fetched.favicon) favicon = fetched.favicon;
+        }
+        shortcuts.unshift({
+          url,
+          title: finalTitle || '',
+          favicon
+        });
+        if (shortcuts.length > MAX_SHORTCUTS) shortcuts = shortcuts.slice(0, MAX_SHORTCUTS);
+        saveShortcuts();
+        renderShowcase();
+        closeShortcutsModal();
+      }
+
+      modal.addEventListener('click', e => {
+        if (e.target === modal) closeShortcutsModal();
+      });
+      shortcutAdd.addEventListener('click', addShortcut);
+      shortcutUrl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') addShortcut();
+      });
+      shortcutTitle.addEventListener('keydown', e => {
+        if (e.key === 'Enter') addShortcut();
+      });
+
+      /* ---------- 帮助按钮 + 拖拽删除 ---------- */
+      if (helpBtn && helpPopover) {
+        let isDraggingShortcut = false;
+
+        function setHelpOpen(open) {
+          helpPopover.classList.toggle('open', open);
+          helpPopover.setAttribute('aria-hidden', String(!open));
+        }
+
+        helpBtn.addEventListener('click', e => {
+          // 如果刚刚发生了一次拖拽，忽略随之而来的 click
+          if (isDraggingShortcut) { isDraggingShortcut = false; return; }
+          e.stopPropagation();
+          setHelpOpen(!helpPopover.classList.contains('open'));
+        });
+
+        document.addEventListener('click', e => {
+          if (!helpPopover.classList.contains('open')) return;
+          if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
+          setHelpOpen(false);
+        });
+
+        document.addEventListener('keydown', e => {
+          if (e.key === 'Escape' && helpPopover.classList.contains('open')) {
+            setHelpOpen(false);
+          }
+        });
+
+        // 拖拽：每个 shortcut-item 在 dragstart 标记自己、dragend 复原。
+        // 拖拽时原始 item 立刻隐藏（让别人占位），克隆一个 .shortcut-proxy 跟随光标。
+        let proxyEl = null;
+        let proxyOffsetX = 0;
+        let proxyOffsetY = 0;
+        let proxyFromIndex = -1;
+        const PROXY_W = 66;
+        const PROXY_H = 88;
+        let lastDragX = 0;
+        let lastDragY = 0;
+
+        shortcutsShowcase.addEventListener('dragstart', e => {
+          const item = e.target.closest('.shortcut-item');
+          if (!item) return;
+
+          proxyFromIndex = Number(item.dataset.index);
+          e.dataTransfer.setData('text/plain', String(proxyFromIndex));
+          e.dataTransfer.effectAllowed = 'move';
+
+          // 计算光标在 item 内的相对偏移
+          const rect = item.getBoundingClientRect();
+          proxyOffsetX = e.clientX - rect.left;
+          proxyOffsetY = e.clientY - rect.top;
+          lastDragX = rect.left;
+          lastDragY = rect.top;
+
+          // 创建视觉代理节点：固定定位，复制外观
+          proxyEl = item.cloneNode(true);
+          proxyEl.classList.add('shortcut-proxy');
+          proxyEl.style.width = `${PROXY_W}px`;
+          proxyEl.style.height = `${PROXY_H}px`;
+          proxyEl.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1.14)`;
+          proxyEl.setAttribute('aria-hidden', 'true');
+          document.body.appendChild(proxyEl);
+          item.classList.add('dragging-source');
+
+          // 下一帧隐藏原始 item，让列表立即“塌陷”，同时避免同步重排
+          requestAnimationFrame(() => { item.style.opacity = '0'; });
+
+          document.body.classList.add('is-dragging-shortcut');
+          helpBtn.classList.add('dragging-trash');
+        });
+
+        // 持续跟踪光标位置，用 translate3d 避免布局抖动
+        document.addEventListener('dragover', e => {
+          if (!proxyEl) return;
+          lastDragX = e.clientX - proxyOffsetX;
+          lastDragY = e.clientY - proxyOffsetY;
+          proxyEl.style.transform = `translate3d(${lastDragX}px, ${lastDragY}px, 0) scale(1.14)`;
+        });
+
+        function finishDrag({ flyBack = false } = {}) {
+          document.body.classList.remove('is-dragging-shortcut');
+          helpBtn.classList.remove('dragging-trash', 'drop-target');
+
+          const src = shortcutsShowcase.querySelector('.shortcut-item.dragging-source');
+
+          if (!proxyEl) {
+            if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
+            proxyEl = null;
+            proxyFromIndex = -1;
+            return;
+          }
+
+          if (flyBack && src) {
+            const startRect = proxyEl.getBoundingClientRect();
+            const endRect = src.getBoundingClientRect();
+            const startX = startRect.left;
+            const startY = startRect.top;
+            const endX = endRect.left;
+            const endY = endRect.top;
+            const startTime = performance.now();
+            const duration = 260;
+
+            function animate(now) {
+              const t = Math.min(1, (now - startTime) / duration);
+              const e = 1 - Math.pow(1 - t, 3);
+              const x = startX + (endX - startX) * e;
+              const y = startY + (endY - startY) * e;
+              const s = 1.14 + (1 - 1.14) * e;
+              proxyEl.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${s})`;
+              if (t < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
+                proxyEl = null;
+                proxyFromIndex = -1;
+              }
+            }
+            requestAnimationFrame(animate);
+
+            requestAnimationFrame(() => {
+              if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
+            });
+            setTimeout(() => {
+              if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
+              proxyEl = null;
+              proxyFromIndex = -1;
+            }, 320);
+          } else {
+            if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
+            proxyEl = null;
+            proxyFromIndex = -1;
+            if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
+          }
+
+          isDraggingShortcut = true;
+          setTimeout(() => { isDraggingShortcut = false; }, 1000);
+        }
+
+        shortcutsShowcase.addEventListener('dragend', () => {
+          finishDrag({ flyBack: true });
+        });
+
+        // 垃圾桶本体是 drop target。drop 时读 dataTransfer，由此找出 idx 删除。
+        helpBtn.addEventListener('dragover', e => {
+          if (!document.body.classList.contains('is-dragging-shortcut')) return;
+          e.preventDefault();
+          helpBtn.classList.add('drop-target');
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        helpBtn.addEventListener('dragleave', () => {
+          helpBtn.classList.remove('drop-target');
+        });
+
+        helpBtn.addEventListener('drop', e => {
+          e.preventDefault();
+          helpBtn.classList.remove('drop-target');
+          if (!document.body.classList.contains('is-dragging-shortcut')) return;
+          const raw = e.dataTransfer.getData('text/plain');
+          const idx = Number(raw);
+          if (Number.isFinite(idx) && idx >= 0 && idx < shortcuts.length) {
+            shortcuts.splice(idx, 1);
+            saveShortcuts();
+            renderShowcase();
+            finishDrag();
+          }
+        });
+      }
+
+      fileInput.addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await setCurrentBackground(file);
+        await addBgFile(file);
+      });
+
+            document.body.addEventListener('keydown', async e => {
+        if (e.target === input || e.target === shortcutTitle || e.target === shortcutUrl) return;
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          await loadBgStore();
+          if (bgOrder.length === 0) return;
+          if (currentBgIndex < 0) currentBgIndex = 0;
+          const nextIndex = Math.min(bgOrder.length - 1, currentBgIndex + 1);
+          if (nextIndex === currentBgIndex) return;
+          currentBgIndex = nextIndex;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (file) setBackground(file);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          await loadBgStore();
+          if (bgOrder.length === 0 || currentBgIndex < 0) return;
+          const nextIndex = Math.max(0, currentBgIndex - 1);
+          if (nextIndex === currentBgIndex) return;
+          currentBgIndex = nextIndex;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (file) setBackground(file);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          await loadBgStore();
+          if (currentBgIndex <= 0 || bgOrder.length === 0) return;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (!file) return;
+          await promoteBgFile(currentBgIndex);
+          currentBgIndex = 0;
+          setBackground(file);
+        } else if (e.key === '+' && !modal.classList.contains('open')) {
+          e.preventDefault();
+          openShortcutsModal();
+        } else if (e.key === 'Escape' && modal.classList.contains('open')) {
+          closeShortcutsModal();
+        }
+      });
+
+      renderShowcase();
+
+      // 双击背景空白处选择图片/视频
+      let lastClickTime = 0;
+      document.body.addEventListener('click', e => {
+        if (searchCard.contains(e.target)) return;
+        if (shortcutsShowcase.contains(e.target)) return;
+        if (modal.contains(e.target)) return;
+        if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
+        const now = Date.now();
+        if (now - lastClickTime <= 500) {
+          fileInput.click();
+          lastClickTime = 0;
+        } else {
+          lastClickTime = now;
+        }
+      });
+
+      function updateActiveBtn(key) {
+        btns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.engine === key);
+        });
+      }
+
+      function doSearch(key, q) {
+        localStorage.setItem('homepage_default_engine', key);
+        updateActiveBtn(key);
+        defaultEngine = key;
+        addHistory(q, key);
+        window.location.href = engines[key].url(q);
+      }
+
+      let defaultEngine = localStorage.getItem('homepage_default_engine') || 'qianwen';
+      updateActiveBtn(defaultEngine);
+
+      input.addEventListener('focus', () => {
+        historyIndex = -1;
+        originalInputValue = input.value;
+      });
+
+      input.addEventListener('blur', () => {
+        historyIndex = -1;
+      });
+
+      input.addEventListener('input', () => {
+        historyIndex = -1;
+        originalInputValue = input.value;
+        input.dataset.lastInputTime = String(performance.now());
+      });
+
+      input.addEventListener('compositionend', () => {
+        input.dataset.lastInputTime = String(performance.now());
+      });
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (history.length === 0) return;
+          if (historyIndex < 0) {
+            historyIndex = history.length - 1;
+            originalInputValue = input.value;
+          } else {
+            historyIndex = Math.max(0, historyIndex - 1);
+          }
+          if (history[historyIndex]) input.value = history[historyIndex].q;
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (history.length === 0 || historyIndex < 0) return;
+          if (historyIndex < history.length - 1) {
+            historyIndex++;
+            if (history[historyIndex]) input.value = history[historyIndex].q;
+          } else {
+            input.value = originalInputValue;
+            historyIndex = -1;
+          }
+        } else if (e.key === 'Enter') {
+          const qAtDown = input.value.trim();
+          const lastInputTime = Number(input.dataset.lastInputTime || 0);
+          // 如果最近 100ms 内发生过输入事件（含输入法上屏），说明用户更可能是在确认输入而非搜索
+          if (performance.now() - lastInputTime < 100) return;
+          if (qAtDown) doSearch(defaultEngine, qAtDown);
+        } else if (e.key === 'Escape') {
+          historyIndex = -1;
+          input.value = originalInputValue;
+          input.blur();
+        }
+      });
+
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.engine;
+          const q = input.value.trim();
+          if (q) {
+            doSearch(key, q);
+          } else {
+            defaultEngine = key;
+            localStorage.setItem('homepage_default_engine', key);
+            updateActiveBtn(key);
+            input.focus();
+          }
+        });
+      });
+
+
+      function loadHistory() {
+        try {
+          return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveHistory() {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+      }
+
+      function addHistory(q, engine) {
+        history = history.filter(item => item.q !== q);
+        history.unshift({ q, engine, time: Date.now() });
+        if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+        saveHistory();
+      }
+
+            let history = loadHistory();
+      let historyIndex = -1;
+      let originalInputValue = '';
+
+      let bgOrder = [];          // 内存中：hash 数组
+      let bgFiles = new Map();   // 内存中：hash -> File
+      let currentBgHash = null;
+      let currentBgIndex = -1;
+      let activeBgHash = null;   // 当前显示中的 hash
+      let activeBgType = null;
+      let activeBgSrc = null;    // 当前显示用的 blob URL / data URL
+      let bgStoreLoaded = false;
+
+      const DB_NAME = 'homepage_bg';
+      const STORE_NAME = 'background';
+      const ORDER_KEY = 'order';
+
+      function bgHash(file) {
+        const raw = [file.name, String(file.size), file.type || '', String(file.lastModified || 0)].join('|');
+        let h = 0x811c9dc5;
+        for (let i = 0; i < raw.length; i++) {
+          h ^= raw.charCodeAt(i);
+          h = Math.imul(h, 0x01000193);
+        }
+        return (h >>> 0).toString(32);
+      }
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, 3);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME);
+            }
+            // v3: 只保留单一 store
+            const storesToDelete = Array.from(db.objectStoreNames).filter(n => n !== STORE_NAME);
+            for (const n of storesToDelete) db.deleteObjectStore(n);
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function loadBgStore() {
+        if (bgStoreLoaded) return;
+        try {
+          const db = await openDB();
+          const order = await new Promise((res, rej) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const r = tx.objectStore(STORE_NAME).get(ORDER_KEY);
+            r.onsuccess = () => res(r.result || []);
+            r.onerror = () => rej(r.error);
+          });
+          bgOrder = Array.isArray(order) ? order : [];
+          bgFiles = new Map();
+          for (const hash of bgOrder) {
+            const file = await new Promise((res, rej) => {
+              const tx = db.transaction(STORE_NAME, 'readonly');
+              const r = tx.objectStore(STORE_NAME).get(hash);
+              r.onsuccess = () => res(r.result);
+              r.onerror = () => rej(r.error);
+            });
+            if (file) bgFiles.set(hash, file);
+          }
+          // 顺序和文件不一致时清理孤儿 hash
+          bgOrder = bgOrder.filter(h => bgFiles.has(h));
+          bgStoreLoaded = true;
+        } catch (err) {
+          console.warn('背景存储加载失败:', err);
+        }
+      }
+
+      async function persistBgStore() {
+        try {
+          const db = await openDB();
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.put(bgOrder, ORDER_KEY);
+          for (const [hash, file] of bgFiles) store.put(file, hash);
+          // 清理 order 里不存在的 hash
+          const allKeys = await new Promise((res, rej) => {
+            const r = store.getAllKeys();
+            r.onsuccess = () => res(r.result || []);
+            r.onerror = () => rej(r.error);
+          });
+          for (const k of allKeys) {
+            if (k === ORDER_KEY || bgFiles.has(k)) continue;
+            store.delete(k);
+          }
+          await new Promise((res, rej) => {
+            tx.oncomplete = () => res();
+            tx.onerror = () => rej(tx.error);
+            tx.onabort = () => rej(tx.error);
+          });
+        } catch (err) {
+          console.warn('背景存储同步失败:', err);
+        }
+      }
+
+      function getBgFileByIndex(index) {
+        const hash = bgOrder[index];
+        return hash ? bgFiles.get(hash) : null;
+      }
+
+      function getBgIndexByFile(file) {
+        const hash = bgHash(file);
+        return bgOrder.indexOf(hash);
+      }
+
+      async function addBgFile(file) {
+        await loadBgStore();
+        const hash = bgHash(file);
+        bgFiles.set(hash, file);
+        bgOrder = bgOrder.filter(h => h !== hash);
+        bgOrder.unshift(hash);
+        if (bgOrder.length > MAX_BG_HISTORY) {
+          const removed = bgOrder.splice(MAX_BG_HISTORY);
+          for (const h of removed) bgFiles.delete(h);
+        }
+        currentBgHash = hash;
+        currentBgIndex = 0;
+        await persistBgStore();
+      }
+
+      async function promoteBgFile(index) {
+        await loadBgStore();
+        const hash = bgOrder[index];
+        if (!hash) return;
+        bgOrder = bgOrder.filter(h => h !== hash);
+        bgOrder.unshift(hash);
+        currentBgHash = hash;
+        currentBgIndex = 0;
+        await persistBgStore();
+      }
+
+      async function setCurrentBackground(file) {
+        const hash = bgHash(file);
+        currentBgHash = hash;
+        currentBgIndex = 0;
+        await setBackground(file);
+      }
+
+      async function resolveBgSrc(file) {
+        const hash = bgHash(file);
+        if (activeBgHash === hash && activeBgSrc) return activeBgSrc;
+        if (activeBgSrc && activeBgSrc.startsWith('blob:')) {
+          try { URL.revokeObjectURL(activeBgSrc); } catch { /* noop */ }
+        }
+        activeBgHash = hash;
+        activeBgType = file.type || 'image/png';
+
+        let url = '';
+        try {
+          url = URL.createObjectURL(file);
+          const ok = await probeObjectUrl(url, activeBgType);
+          if (ok) { activeBgSrc = url; return url; }
+        } catch (err) {
+          console.warn('object URL failed:', err);
+        }
+        if (url) { try { URL.revokeObjectURL(url); } catch { /* noop */ } }
+
+        // 备用：直接读 file.arrayBuffer() 生成 data URL（Safari 若 File 已被掏空，这里也会失败）
+        try {
+          const buf = await file.arrayBuffer();
+          const dataUrl = await bufferToDataUrl(buf, activeBgType);
+          activeBgSrc = dataUrl;
+          return dataUrl;
+        } catch (err) {
+          console.error('data URL fallback failed:', err);
+        }
+
+        activeBgSrc = null;
+        return '';
+      }
+
+      function bufferToDataUrl(buf, type) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(new Blob([buf], { type: type || 'application/octet-stream' }));
+        });
+      }
+
+      function probeObjectUrl(url, type) {
+        return new Promise(resolve => {
+          if (type.startsWith('video/')) {
+            const v = document.createElement('video');
+            v.muted = true; v.preload = 'metadata';
+            let settled = false;
+            const done = ok => { if (!settled) { settled = true; clearTimeout(timer); resolve(ok); } };
+            v.addEventListener('loadedmetadata', () => done(true));
+            v.addEventListener('error', () => done(false));
+            v.src = url;
+            const timer = setTimeout(() => done(false), 2500);
+          } else {
+            const img = new Image();
+            let settled = false;
+            const done = ok => { if (!settled) { settled = true; clearTimeout(timer); resolve(ok); } };
+            img.addEventListener('load', () => done(true));
+            img.addEventListener('error', () => done(false));
+            img.src = url;
+            const timer = setTimeout(() => done(false), 2500);
+          }
+        });
+      }
+
+      async function setBackground(file) {
+        const url = await resolveBgSrc(file);
+        bgLayer.innerHTML = '';
+        if (!url) return;
+        if (activeBgType.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.src = url;
+          video.autoplay = true;
+          video.loop = true;
+          video.muted = true;
+          video.playsInline = true;
+          video.style.opacity = '0';
+          let revealed = false;
+          const reveal = () => { if (!revealed) { revealed = true; video.style.transition = 'opacity 0.6s ease'; video.style.opacity = '1'; } };
+          video.addEventListener('loadeddata', reveal);
+          setTimeout(reveal, 800);
+          bgLayer.appendChild(video);
+        } else {
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = 'background';
+          img.style.opacity = '0';
+          let revealed = false;
+          const reveal = () => { if (!revealed) { revealed = true; img.style.transition = 'opacity 0.6s ease'; img.style.opacity = '1'; } };
+          img.addEventListener('load', reveal);
+          setTimeout(reveal, 800);
+          bgLayer.appendChild(img);
+        }
+      }
+
+      async function loadBackground() {
+        try {
+          await loadBgStore();
+          if (!currentBgHash && bgOrder.length) {
+            currentBgHash = bgOrder[0];
+            currentBgIndex = 0;
+          }
+          if (currentBgHash && currentBgIndex < 0) {
+            const idx = bgOrder.indexOf(currentBgHash);
+            if (idx >= 0) currentBgIndex = idx;
+          }
+          const file = currentBgHash ? bgFiles.get(currentBgHash) : null;
+          if (file) {
+            await setBackground(file);
+          }
+        } catch (err) {
+          console.warn('背景加载失败:', err);
+        }
+      }
+
+      loadBackground();
+
+      // Service Worker: stale-while-revalidate for the main document so the page
+      // loads from cache instantly and refreshes in the background every 24h.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Register with an explicit scope allowed header at root so the SW
+          // can intercept all navigations on the domain.
+          navigator.serviceWorker.register('/worker.js', { scope: '/' }).catch(err => {
+            console.warn('sw register failed', err);
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
