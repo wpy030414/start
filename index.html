@@ -27,6 +27,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
+      touch-action: manipulation;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
       background: #050505;
       color: var(--text);
@@ -41,6 +42,8 @@
 
     #bg-layer img,
     #bg-layer video {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -48,7 +51,8 @@
       filter: saturate(1.05);
     }
 
-    #bg-layer::after {
+    /* 暗角与高光纹理仅在真实背景上叠加；白底波点默认背景保持干净 */
+    #bg-layer:not(.default-bg)::after {
       content: "";
       position: absolute;
       inset: 0;
@@ -160,6 +164,7 @@
       position: relative;
       z-index: 2;
       flex: 1;
+      min-width: 0;
       height: 100%;
       border: none;
       outline: none;
@@ -184,6 +189,7 @@
       position: relative;
       z-index: 2;
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       gap: 9px;
       margin-left: 4px;
@@ -192,6 +198,7 @@
     .engine-btn {
       width: 42px;
       height: 42px;
+      flex-shrink: 0;
       border: none;
       border-radius: 50%;
       background:
@@ -757,20 +764,6 @@
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 42%);
     }
 
-    .help-popover-arrow {
-      position: absolute;
-      right: 13px;
-      bottom: -7px;
-      width: 14px;
-      height: 14px;
-      background: rgba(255, 255, 255, 0.12);
-      border-right: 1px solid rgba(255, 255, 255, 0.28);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-      backdrop-filter: blur(30px) saturate(180%);
-      -webkit-backdrop-filter: blur(30px) saturate(180%);
-      transform: rotate(45deg);
-    }
-
     .help-popover-content {
       position: relative;
       z-index: 2;
@@ -815,6 +808,136 @@
       font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
       font-size: 11px;
       line-height: 1.55;
+    }
+
+    /* ---------- 设置按钮（左下角，镜像帮助按钮） ---------- */
+    .settings-btn {
+      left: 26px;
+      right: auto;
+    }
+
+    .settings-popover {
+      left: 26px;
+      right: auto;
+      transform-origin: 21px calc(100% + 14px);
+    }
+
+    .settings-list {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .setting-label {
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 24px;
+      flex: 0 0 auto;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.30);
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72));
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.32);
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toggle[aria-checked="true"] {
+      background: rgba(170, 220, 255, 0.45);
+      border-color: rgba(170, 220, 255, 0.62);
+      box-shadow: 0 0 12px rgba(170, 220, 255, 0.30);
+    }
+
+    .toggle[aria-checked="true"] .toggle-knob {
+      transform: translateX(16px);
+    }
+
+    .setting-reset {
+      margin-top: 4px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 90, 90, 0.50);
+      background: radial-gradient(circle at 30% 25%, rgba(255, 90, 110, 0.42), rgba(180, 40, 60, 0.26) 60%);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .setting-reset:hover {
+      transform: translateY(-1px);
+      background: radial-gradient(circle at 30% 25%, rgba(255, 100, 120, 0.52), rgba(200, 50, 70, 0.32) 60%);
+    }
+
+    /* ---------- 默认背景：深灰底彩色波点 ---------- */
+    #bg-layer.default-bg {
+      background: #333333;
+      overflow: hidden;
+    }
+
+    .default-dot {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--dot-color, #3ec27a);
+      transform: translate(-50%, -50%);
+      width: calc(2px + 10px * var(--mul, 1));
+      height: calc(2px + 10px * var(--mul, 1));
+      opacity: calc(0.25 + 0.55 * var(--mul, 1));
+      pointer-events: none;
+    }
+
+    /* ---------- 移动端适配：搜索框防溢出 ---------- */
+    @media (max-width: 540px) {
+      .search-card {
+        height: 56px;
+        padding: 5px 8px 5px 16px;
+      }
+      #search-input {
+        font-size: 16px;
+      }
+      .engine-buttons {
+        gap: 6px;
+        margin-left: 2px;
+      }
+      .engine-btn {
+        width: 38px;
+        height: 38px;
+      }
+      .engine-btn img {
+        width: 18px;
+        height: 18px;
+      }
     }
 
   </style>
@@ -875,16 +998,44 @@
     </span>
   </button>
   <div id="help-popover" class="help-popover" aria-hidden="true">
-    <div class="help-popover-arrow"></div>
     <div class="help-popover-content">
       <strong>常用功能</strong>
       <ul>
-        <li><b>搜索</b>：输入关键词，选择引擎按钮后回车。</li>
-        <li><b>搜索历史</b>：文本框聚焦后按 ↑/↓ 方向键浏览。</li>
+        <li><b>搜索</b>：输入关键词后，再次点击当前引擎图标即可搜索；留空点击则进入该引擎首页。</li>
+        <li><b>搜索历史</b>：文本框聚焦后按 <kbd>↑</kbd> / <kbd>↓</kbd> 浏览。</li>
         <li><b>快捷链接</b>：按 <kbd>+</kbd> 添加；拖到右下角图标上删除。</li>
-        <li><b>背景</b>：双击空白处选择图片或视频。</li>
-        <li><b>背景历史</b>：← / → 键浏览本地图库；Enter 设为当前项。</li>
+        <li><b>背景</b>：快速连续点按空白处 5 次选择图片或视频。</li>
+        <li><b>背景历史</b>：按 <kbd>←</kbd> / <kbd>→</kbd> 浏览本地图库；按 <kbd>Enter</kbd> 设为当前项。</li>
       </ul>
+    </div>
+  </div>
+
+  <button id="settings-btn" class="help-btn settings-btn" title="设置" aria-label="设置">
+    <span class="help-btn-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </span>
+  </button>
+  <div id="settings-popover" class="help-popover settings-popover" aria-hidden="true">
+    <div class="help-popover-content">
+      <strong>设置</strong>
+      <div class="settings-list">
+        <div class="setting-row">
+          <span class="setting-label">循环播放</span>
+          <button class="toggle" role="switch" aria-checked="false" data-setting="cycle" aria-label="循环播放">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">循环类型隔离</span>
+          <button class="toggle" role="switch" aria-checked="false" data-setting="cycleTypeIsolated" aria-label="循环类型隔离">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <button class="setting-reset" id="setting-reset">重置</button>
+      </div>
     </div>
   </div>
 
@@ -893,15 +1044,18 @@
       const engines = {
         qianwen: {
           name: '千问',
-          url: q => `https://tongyi.aliyun.com/qianwen/?query=${encodeURIComponent(q)}`
+          url: q => `https://tongyi.aliyun.com/qianwen/?query=${encodeURIComponent(q)}`,
+          home: 'https://tongyi.aliyun.com/qianwen/'
         },
         bing: {
           name: '必应',
-          url: q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`
+          url: q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`,
+          home: 'https://www.bing.com/'
         },
         bilibili: {
           name: '哔哩哔哩',
-          url: q => `https://search.bilibili.com/all?keyword=${encodeURIComponent(q)}`
+          url: q => `https://search.bilibili.com/all?keyword=${encodeURIComponent(q)}`,
+          home: 'https://www.bilibili.com/'
         }
       };
 
@@ -922,7 +1076,7 @@
       const HISTORY_KEY = 'homepage_search_history';
       const MAX_HISTORY = 100;
 
-      const MAX_BG_HISTORY = 5;
+      const MAX_BG_HISTORY = 10;
       const SHORTCUTS_KEY = 'homepage_shortcuts';
       const MAX_SHORTCUTS = 6;
 
@@ -1146,6 +1300,7 @@
           // 如果刚刚发生了一次拖拽，忽略随之而来的 click
           if (isDraggingShortcut) { isDraggingShortcut = false; return; }
           e.stopPropagation();
+          setSettingsOpen(false);
           setHelpOpen(!helpPopover.classList.contains('open'));
         });
 
@@ -1349,19 +1504,24 @@
 
       renderShowcase();
 
-      // 双击背景空白处选择图片/视频
-      let lastClickTime = 0;
+      // 快速连续点按空白处 5 次选择图片/视频（双击极易误触，故提高门槛）
+      const BG_CLICKS_REQUIRED = 5;
+      const BG_CLICK_WINDOW = 500; // 相邻两次点按的最大间隔（ms）
+      let bgClickCount = 0;
+      let lastBgClickTime = 0;
       document.body.addEventListener('click', e => {
         if (searchCard.contains(e.target)) return;
         if (shortcutsShowcase.contains(e.target)) return;
         if (modal.contains(e.target)) return;
         if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
+        if (settingsBtn.contains(e.target) || settingsPopover.contains(e.target)) return;
         const now = Date.now();
-        if (now - lastClickTime <= 500) {
+        if (now - lastBgClickTime > BG_CLICK_WINDOW) bgClickCount = 0; // 超时则重新计数
+        bgClickCount++;
+        lastBgClickTime = now;
+        if (bgClickCount >= BG_CLICKS_REQUIRED) {
+          bgClickCount = 0;
           fileInput.click();
-          lastClickTime = 0;
-        } else {
-          lastClickTime = now;
         }
       });
 
@@ -1394,11 +1554,6 @@
       input.addEventListener('input', () => {
         historyIndex = -1;
         originalInputValue = input.value;
-        input.dataset.lastInputTime = String(performance.now());
-      });
-
-      input.addEventListener('compositionend', () => {
-        input.dataset.lastInputTime = String(performance.now());
       });
 
       input.addEventListener('keydown', e => {
@@ -1422,12 +1577,6 @@
             input.value = originalInputValue;
             historyIndex = -1;
           }
-        } else if (e.key === 'Enter') {
-          const qAtDown = input.value.trim();
-          const lastInputTime = Number(input.dataset.lastInputTime || 0);
-          // 如果最近 100ms 内发生过输入事件（含输入法上屏），说明用户更可能是在确认输入而非搜索
-          if (performance.now() - lastInputTime < 100) return;
-          if (qAtDown) doSearch(defaultEngine, qAtDown);
         } else if (e.key === 'Escape') {
           historyIndex = -1;
           input.value = originalInputValue;
@@ -1438,9 +1587,15 @@
       btns.forEach(btn => {
         btn.addEventListener('click', () => {
           const key = btn.dataset.engine;
-          const q = input.value.trim();
-          if (q) {
-            doSearch(key, q);
+          // 点击当前激活引擎：有内容则搜索，为空则进入该引擎首页；
+          // 点击其他引擎：仅切换默认引擎，不搜索、不跳转。
+          if (key === defaultEngine) {
+            const q = input.value.trim();
+            if (q) {
+              doSearch(key, q);
+            } else {
+              window.location.href = engines[key].home;
+            }
           } else {
             defaultEngine = key;
             localStorage.setItem('homepage_default_engine', key);
@@ -1481,6 +1636,7 @@
       let activeBgHash = null;   // 当前显示中的 hash
       let activeBgType = null;
       let activeBgSrc = null;    // 当前显示用的 blob URL / data URL
+      let currentBgMedia = null; // 当前显示中的媒体元素（crossfade 时临时与旧元素共存）
       let bgStoreLoaded = false;
 
       const DB_NAME = 'homepage_bg';
@@ -1616,9 +1772,8 @@
       async function resolveBgSrc(file) {
         const hash = bgHash(file);
         if (activeBgHash === hash && activeBgSrc) return activeBgSrc;
-        if (activeBgSrc && activeBgSrc.startsWith('blob:')) {
-          try { URL.revokeObjectURL(activeBgSrc); } catch { /* noop */ }
-        }
+        // 注意：此处不立即 revoke 旧 activeBgSrc——旧媒体节点要撑到 crossfade 结束才移除，
+        // 释放动作改由 setBackground 的 cleanup 负责。
         activeBgHash = hash;
         activeBgType = file.type || 'image/png';
 
@@ -1679,33 +1834,274 @@
       }
 
       async function setBackground(file) {
+        const prevSrc = activeBgSrc;
         const url = await resolveBgSrc(file);
-        bgLayer.innerHTML = '';
         if (!url) return;
+
+        // 旧媒体节点先留着，交叉溶解完成后再移除（避免黑底闪烁）
+        const oldMedia = Array.from(bgLayer.querySelectorAll('img, video'));
+        bgLayer.classList.remove('default-bg');
+        bgLayer.style.background = '';
+        bgLayer.style.removeProperty('--dot-color');
+        bgLayer.querySelectorAll('.default-dot').forEach(d => d.remove());
+
+        let media;
         if (activeBgType.startsWith('video/')) {
-          const video = document.createElement('video');
-          video.src = url;
-          video.autoplay = true;
-          video.loop = true;
-          video.muted = true;
-          video.playsInline = true;
-          video.style.opacity = '0';
-          let revealed = false;
-          const reveal = () => { if (!revealed) { revealed = true; video.style.transition = 'opacity 0.6s ease'; video.style.opacity = '1'; } };
-          video.addEventListener('loadeddata', reveal);
-          setTimeout(reveal, 800);
-          bgLayer.appendChild(video);
+          media = document.createElement('video');
+          media.src = url;
+          media.autoplay = true;
+          media.loop = true;
+          media.muted = true;
+          media.playsInline = true;
         } else {
-          const img = document.createElement('img');
-          img.src = url;
-          img.alt = 'background';
-          img.style.opacity = '0';
-          let revealed = false;
-          const reveal = () => { if (!revealed) { revealed = true; img.style.transition = 'opacity 0.6s ease'; img.style.opacity = '1'; } };
-          img.addEventListener('load', reveal);
-          setTimeout(reveal, 800);
-          bgLayer.appendChild(img);
+          media = document.createElement('img');
+          media.src = url;
+          media.alt = 'background';
         }
+        media.style.opacity = '0';
+        bgLayer.appendChild(media);
+        currentBgMedia = media;
+
+        let revealed = false;
+        const reveal = () => {
+          if (revealed) return;
+          revealed = true;
+          media.style.transition = 'opacity 2s ease';
+          // 强制 reflow：让起始透明度 0 先被浏览器采纳，
+          // 否则起始值与目标值可能合并进同一帧 → 瞬切，看不到溶解
+          void media.offsetWidth;
+          media.style.opacity = '1';
+        };
+        media.addEventListener('loadeddata', reveal); // video
+        media.addEventListener('load', reveal);       // img
+        setTimeout(reveal, 800);
+
+        // 针对新媒体立即排程循环
+        scheduleBgCycle();
+
+        // 新背景淡入完成后：移除旧背景并释放旧 blob URL
+        let cleaned = false;
+        const cleanup = () => {
+          if (cleaned) return;
+          cleaned = true;
+          oldMedia.forEach(el => el.remove());
+          if (prevSrc && prevSrc !== url && prevSrc.startsWith('blob:')) {
+            try { URL.revokeObjectURL(prevSrc); } catch { /* noop */ }
+          }
+        };
+        media.addEventListener('transitionend', function onTe(e) {
+          if (e.propertyName !== 'opacity') return;
+          media.removeEventListener('transitionend', onTe);
+          cleanup();
+        });
+        setTimeout(cleanup, 3500); // 兜底：防止 transitionend 不触发
+      }
+
+      // 未设置背景时的默认底：深灰底 + 随机颜色（绿/粉/橙）密集波点。
+      // 从顶部均匀排布到 2/3 vh，越向下越小，到 2/3 vh 处缩为 0 彻底消失。
+      function renderDefaultBackground() {
+        bgLayer.innerHTML = '';
+        bgLayer.classList.add('default-bg');
+        bgLayer.style.background = '#333333';
+
+        const palette = {
+          green:  '#3ec27a',
+          pink:   '#ff79a6',
+          orange: '#ff9d3d'
+        };
+        const keys = Object.keys(palette);
+        const color = palette[keys[Math.floor(Math.random() * keys.length)]];
+        bgLayer.style.setProperty('--dot-color', color);
+
+        const cols = 18;
+        const rows = 14;
+        const endVh = 200 / 3;        // ≈66.67vh，即 2/3
+        const cellX = 100 / cols;     // 每列宽度（百分比）
+
+        const frag = document.createDocumentFragment();
+        for (let r = 0; r < rows; r++) {
+          const yFrac = rows === 1 ? 0 : r / (rows - 1); // 0..1
+          const mul = 1 - yFrac;                          // 1..0
+          const top = (yFrac * endVh).toFixed(3);         // vh
+          const shift = (r % 2) * 0.5;                    // 隔行错位半格，呈波点排布
+          for (let c = 0; c < cols; c++) {
+            const left = (c + 0.5 + shift) * cellX;
+            const dot = document.createElement('div');
+            dot.className = 'default-dot';
+            dot.style.left = left.toFixed(3) + '%';
+            dot.style.top = top + 'vh';
+            dot.style.setProperty('--mul', mul.toFixed(3));
+            frag.appendChild(dot);
+          }
+        }
+        bgLayer.appendChild(frag);
+      }
+
+      /* ---------- 设置：背景循环播放 ---------- */
+      let cycleEnabled = localStorage.getItem('homepage_bg_cycle') === '1';
+      let cycleTypeIsolated = localStorage.getItem('homepage_bg_cycle_type_isolated') === '1';
+      let cycleTimer = null;
+      let cycleVideoEl = null;
+
+      // 清除当前排程的循环（图片定时器 / 视频 ended 监听）
+      function clearBgCycle() {
+        if (cycleTimer) { clearTimeout(cycleTimer); cycleTimer = null; }
+        if (cycleVideoEl) {
+          cycleVideoEl.removeEventListener('ended', onCycleVideoEnded);
+          cycleVideoEl = null;
+        }
+      }
+
+      function onCycleVideoEnded() {
+        advanceBgCycle();
+      }
+
+      // 关闭循环时把视频恢复成无限循环播放
+      function restoreVideoLoop() {
+        if (currentBgMedia && currentBgMedia.tagName === 'VIDEO') currentBgMedia.loop = true;
+      }
+
+      // 计算可参与循环的下标集合；类型隔离时只取与当前项同类型（图/视频）的
+      function cycleCandidateIndices() {
+        if (!bgOrder.length || currentBgIndex < 0) return [];
+        if (!cycleTypeIsolated) return bgOrder.map((_, i) => i);
+        const cur = bgFiles.get(bgOrder[currentBgIndex]);
+        const curIsVideo = !!(cur && (cur.type || '').startsWith('video/'));
+        const out = [];
+        for (let i = 0; i < bgOrder.length; i++) {
+          const f = bgFiles.get(bgOrder[i]);
+          const isV = !!(f && (f.type || '').startsWith('video/'));
+          if (isV === curIsVideo) out.push(i);
+        }
+        return out;
+      }
+
+      // 根据当前背景类型排程下一次切换：图片 5s，视频等待播放结束（ended）
+      function scheduleBgCycle() {
+        clearBgCycle();
+        if (!cycleEnabled || !currentBgHash) return;
+        const candidates = cycleCandidateIndices();
+        if (candidates.length < 2) {
+          // 当前类型只有一项，保持静态；视频恢复循环
+          restoreVideoLoop();
+          return;
+        }
+        const v = (currentBgMedia && currentBgMedia.tagName === 'VIDEO') ? currentBgMedia : null;
+        if (v) {
+          v.loop = false;
+          v.addEventListener('ended', onCycleVideoEnded);
+          cycleVideoEl = v;
+        } else {
+          cycleTimer = setTimeout(advanceBgCycle, 6000);
+        }
+      }
+
+      function advanceBgCycle() {
+        if (!cycleEnabled) return;
+        const candidates = cycleCandidateIndices();
+        if (candidates.length < 2) { scheduleBgCycle(); return; }
+        let pos = candidates.indexOf(currentBgIndex);
+        if (pos === -1) pos = 0;
+        const nextIndex = candidates[(pos + 1) % candidates.length];
+        if (nextIndex === currentBgIndex) { scheduleBgCycle(); return; }
+        currentBgIndex = nextIndex;
+        currentBgHash = bgOrder[nextIndex];
+        const file = bgFiles.get(currentBgHash);
+        if (file) {
+          setBackground(file); // setBackground 末尾会再次 scheduleBgCycle
+        } else {
+          scheduleBgCycle();
+        }
+      }
+
+      /* ---------- 设置气泡 ---------- */
+      const settingsBtn = document.getElementById('settings-btn');
+      const settingsPopover = document.getElementById('settings-popover');
+      const toggleCycle = settingsPopover.querySelector('[data-setting="cycle"]');
+      const toggleCycleType = settingsPopover.querySelector('[data-setting="cycleTypeIsolated"]');
+      const resetBtn = document.getElementById('setting-reset');
+
+      function setSettingsOpen(open) {
+        settingsPopover.classList.toggle('open', open);
+        settingsPopover.setAttribute('aria-hidden', String(!open));
+      }
+
+      function setToggle(el, on) {
+        el.setAttribute('aria-checked', String(on));
+      }
+
+      // 初始化开关视觉
+      setToggle(toggleCycle, cycleEnabled);
+      setToggle(toggleCycleType, cycleTypeIsolated);
+
+      settingsBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        // 打开设置时关闭帮助气泡
+        helpPopover.classList.remove('open');
+        helpPopover.setAttribute('aria-hidden', 'true');
+        setSettingsOpen(!settingsPopover.classList.contains('open'));
+      });
+
+      document.addEventListener('click', e => {
+        if (!settingsPopover.classList.contains('open')) return;
+        if (settingsBtn.contains(e.target) || settingsPopover.contains(e.target)) return;
+        setSettingsOpen(false);
+      });
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && settingsPopover.classList.contains('open')) {
+          setSettingsOpen(false);
+        }
+      });
+
+      // 点击整行（标签区域）也能切换，点击开关本体交给按钮自身
+      [toggleCycle, toggleCycleType].forEach(t => {
+        const row = t.closest('.setting-row');
+        row.addEventListener('click', e => {
+          if (t.contains(e.target)) return;
+          t.click();
+        });
+      });
+
+      toggleCycle.addEventListener('click', () => {
+        cycleEnabled = !cycleEnabled;
+        localStorage.setItem('homepage_bg_cycle', cycleEnabled ? '1' : '0');
+        setToggle(toggleCycle, cycleEnabled);
+        if (cycleEnabled) scheduleBgCycle();
+        else { clearBgCycle(); restoreVideoLoop(); }
+      });
+
+      toggleCycleType.addEventListener('click', () => {
+        cycleTypeIsolated = !cycleTypeIsolated;
+        localStorage.setItem('homepage_bg_cycle_type_isolated', cycleTypeIsolated ? '1' : '0');
+        setToggle(toggleCycleType, cycleTypeIsolated);
+        // 隔离规则在下一次切换生效；若已开启循环则重新排程以立即生效
+        if (cycleEnabled) scheduleBgCycle();
+      });
+
+      resetBtn.addEventListener('click', async () => {
+        if (!confirm('确定清除所有搜索历史和背景吗？快捷链接与默认引擎会保留。')) return;
+        await resetAll();
+      });
+
+      // 仅清除搜索历史与背景（IndexedDB），保留快捷链接 / 默认引擎 / 设置项
+      async function resetAll() {
+        try { localStorage.removeItem(HISTORY_KEY); } catch { /* noop */ }
+        try {
+          const db = await openDB();
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).clear();
+          await new Promise(res => {
+            tx.oncomplete = () => res();
+            tx.onerror = () => res();
+            tx.onabort = () => res();
+          });
+          try { db.close(); } catch { /* noop */ }
+        } catch (err) {
+          console.warn('重置背景数据失败:', err);
+        }
+        clearBgCycle();
+        location.reload();
       }
 
       async function loadBackground() {
@@ -1722,6 +2118,8 @@
           const file = currentBgHash ? bgFiles.get(currentBgHash) : null;
           if (file) {
             await setBackground(file);
+          } else {
+            renderDefaultBackground();
           }
         } catch (err) {
           console.warn('背景加载失败:', err);
