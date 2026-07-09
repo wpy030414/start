@@ -126,20 +126,18 @@ async function handleMainNavigation(req) {
   const cache = await caches.open(MAIN_CACHE);
   const cached = await cache.match(MAIN_DOC_KEY, { ignoreVary: true });
 
-  // If the cache is still fresh (< 24h), revalidate in background but never
-  // block on it.
-  const cachedAt = await getCacheTime();
-  const freshEnough = cachedAt && Date.now() - cachedAt < MS_PER_DAY;
-
-  if (freshEnough && cached) {
+  // Always serve the cached document instantly if we have it, then refresh in
+  // the background. This guarantees the page opens immediately regardless of
+  // network conditions or browser HTTP cache state.
+  if (cached) {
     eventSafeRefresh(cache);
     return cached;
   }
 
-  // Cache miss or stale: try the network, fall back to cache, fall back to
-  // our offline backup if we really have nothing.
+  // Cache miss: try the network, fall back to cache, fall back to our offline
+  // backup if we really have nothing.
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: 'no-cache' });
     if (res && res.ok) {
       cache.put(MAIN_DOC_KEY, res.clone());
       await setCacheTime(Date.now());
@@ -147,12 +145,11 @@ async function handleMainNavigation(req) {
     }
     throw new Error('non-ok response');
   } catch (err) {
-    if (cached) {
+    const offline = await cache.match(MAIN_DOC_KEY, { ignoreVary: true });
+    if (offline) {
       console.warn('[sw] network failed, serving cached main document', err);
-      return cached;
+      return offline;
     }
-    const offline = await cache.match('index.html', { ignoreVary: true });
-    if (offline) return offline;
     throw err;
   }
 }
@@ -173,7 +170,7 @@ async function staleWhileRevalidate(req, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(req, { ignoreVary: true });
 
-  const network = fetch(req)
+  const network = fetch(req, { cache: 'no-cache' })
     .then(res => {
       if (res && res.ok) {
         cache.put(req, res.clone());
