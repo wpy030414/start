@@ -8,6 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>开始</title>
   <style>
+    /* ---------- 1. Variables ---------- */
     :root {
       --glass-bg: rgba(255, 255, 255, 0.16);
       --glass-border: rgba(255, 255, 255, 0.38);
@@ -20,6 +21,7 @@
       --accent: rgba(170, 220, 255, 0.38);
     }
 
+    /* ---------- 2. Reset & Base ---------- */
     * {
       margin: 0;
       padding: 0;
@@ -36,6 +38,7 @@
       color: var(--text);
     }
 
+    /* ---------- 3. Background Layer ---------- */
     #bg-layer {
       position: fixed;
       inset: 0;
@@ -67,6 +70,7 @@
       mix-blend-mode: overlay;
     }
 
+    /* ---------- 4. Top-Third Layout ---------- */
     #top-third {
       position: relative;
       z-index: 10;
@@ -77,6 +81,7 @@
       padding: 0 20px;
     }
 
+    /* ---------- 5. Search Card ---------- */
     .search-shell {
       position: relative;
       width: min(700px, 94vw);
@@ -188,6 +193,7 @@
       color: rgba(255,255,255,0.45);
     }
 
+    /* ---------- 6. Engine Buttons ---------- */
     .engine-buttons {
       position: relative;
       z-index: 2;
@@ -281,7 +287,7 @@
       z-index: 5;
     }
 
-    /* 快捷链接模态框 */
+    /* ---------- 7. Shortcuts Modal ---------- */
     #shortcuts-modal {
       position: fixed;
       inset: 0;
@@ -395,6 +401,7 @@
       z-index: 2;
     }
 
+    /* ---------- 8. Shortcut Items & Drag ---------- */
     .shortcut-item {
       position: relative;
       display: flex;
@@ -496,6 +503,7 @@
       transition: transform 0.1s ease;
     }
 
+    /* ---------- 9. Shortcut Icons & Titles ---------- */
     .shortcut-icon {
       width: 26px;
       height: 26px;
@@ -543,6 +551,7 @@
       font-size: 15px;
     }
 
+    /* ---------- 10. Shortcuts Showcase ---------- */
     /* 首页快捷链接陈列区：视觉居下 1/3，放大时向外溢出 */
     #shortcuts-showcase {
       position: fixed;
@@ -568,7 +577,7 @@
       pointer-events: auto;
     }
 
-    /* ---------- 帮助按钮 ---------- */
+    /* ---------- 11. Help & Settings Buttons ---------- */
     .help-btn {
       position: fixed;
       right: 26px;
@@ -721,7 +730,12 @@
       transform: scale(1);
     }
 
-    /* 帮助弹出气泡 */
+    .settings-btn {
+      left: 26px;
+      right: auto;
+    }
+
+    /* ---------- 12. Popovers ---------- */
     .help-popover {
       position: fixed;
       right: 26px;
@@ -813,18 +827,13 @@
       line-height: 1.55;
     }
 
-    /* ---------- 设置按钮（左下角，镜像帮助按钮） ---------- */
-    .settings-btn {
-      left: 26px;
-      right: auto;
-    }
-
     .settings-popover {
       left: 26px;
       right: auto;
       transform-origin: 21px calc(100% + 14px);
     }
 
+    /* ---------- 13. Toggles & Reset ---------- */
     .settings-list {
       position: relative;
       z-index: 2;
@@ -903,7 +912,62 @@
       background: radial-gradient(circle at 30% 25%, rgba(255, 100, 120, 0.52), rgba(200, 50, 70, 0.32) 60%);
     }
 
-    /* ---------- 默认背景：深灰底彩色波点 ---------- */
+    .setting-slider-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: default;
+    }
+
+    .setting-slider-row .setting-label {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .setting-value {
+      display: inline-flex;
+      align-items: baseline;
+      margin-left: 8px;
+    }
+
+    .setting-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .setting-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72));
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .setting-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+    }
+
+    .setting-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72));
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ---------- 14. Default Background ---------- */
     #bg-layer.default-bg {
       background: #333333;
       overflow: hidden;
@@ -920,7 +984,7 @@
       pointer-events: none;
     }
 
-    /* ---------- 移动端适配：搜索框防溢出 ---------- */
+    /* ---------- 15. Mobile ---------- */
     @media (max-width: 540px) {
       .search-card {
         height: 56px;
@@ -1037,6 +1101,22 @@
             <span class="toggle-knob"></span>
           </button>
         </div>
+        <div class="setting-row setting-slider-row">
+          <span class="setting-label">
+            <span>切换周期</span>
+            <span class="setting-value"><span id="cycle-interval-value">6</span>s</span>
+          </span>
+          <input
+            type="range"
+            id="cycle-interval"
+            class="setting-slider"
+            min="6"
+            max="30"
+            step="1"
+            value="6"
+            aria-label="切换周期"
+          />
+        </div>
         <button class="setting-reset" id="setting-reset">重置</button>
       </div>
     </div>
@@ -1044,6 +1124,7 @@
 
   <script>
     (function () {
+      /* ---------- module: config ---------- */
       const engines = {
         qianwen: {
           name: '千问',
@@ -1062,20 +1143,6 @@
         }
       };
 
-      const input = document.getElementById('search-input');
-      const btns = document.querySelectorAll('.engine-btn');
-      const fileInput = document.getElementById('file-input');
-      const bgLayer = document.getElementById('bg-layer');
-      const searchCard = document.getElementById('search-card');
-      const helpBtn = document.getElementById('help-btn');
-      const helpPopover = document.getElementById('help-popover');
-
-      const modal = document.getElementById('shortcuts-modal');
-      const shortcutTitle = document.getElementById('shortcut-title');
-      const shortcutUrl = document.getElementById('shortcut-url');
-      const shortcutAdd = document.getElementById('shortcut-add');
-      const shortcutsShowcase = document.getElementById('shortcuts-showcase');
-
       const HISTORY_KEY = 'search_history';
       const MAX_HISTORY = 100;
 
@@ -1083,20 +1150,15 @@
       const SHORTCUTS_KEY = 'shortcuts';
       const MAX_SHORTCUTS = 6;
 
-      let shortcuts = loadShortcuts();
+      const DB_NAME = 'start';
+      const STORE_NAME = 'background';
+      const ORDER_KEY = 'order';
 
-      function loadShortcuts() {
-        try {
-          return JSON.parse(localStorage.getItem(SHORTCUTS_KEY)) || [];
-        } catch {
-          return [];
-        }
-      }
+      const DEFAULT_CYCLE_INTERVAL = 6;
+      const MIN_CYCLE_INTERVAL = 6;
+      const MAX_CYCLE_INTERVAL = 30;
 
-      function saveShortcuts() {
-        localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(shortcuts));
-      }
-
+      /* ---------- module: utils ---------- */
       function getFaviconUrl(url) {
         try {
           const u = new URL(url);
@@ -1118,7 +1180,151 @@
         }
       }
 
-      const renderShowcase = function () {
+      /* ---------- module: dom ---------- */
+      const input = document.getElementById('search-input');
+      const btns = document.querySelectorAll('.engine-btn');
+      const fileInput = document.getElementById('file-input');
+      const bgLayer = document.getElementById('bg-layer');
+      const searchCard = document.getElementById('search-card');
+      const helpBtn = document.getElementById('help-btn');
+      const helpPopover = document.getElementById('help-popover');
+
+      const modal = document.getElementById('shortcuts-modal');
+      const shortcutTitle = document.getElementById('shortcut-title');
+      const shortcutUrl = document.getElementById('shortcut-url');
+      const shortcutAdd = document.getElementById('shortcut-add');
+      const shortcutsShowcase = document.getElementById('shortcuts-showcase');
+
+      const settingsBtn = document.getElementById('settings-btn');
+      const settingsPopover = document.getElementById('settings-popover');
+      const toggleCycle = settingsPopover.querySelector('[data-setting="cycle"]');
+      const toggleCycleType = settingsPopover.querySelector('[data-setting="cycleTypeIsolated"]');
+      const cycleIntervalInput = document.getElementById('cycle-interval');
+      const cycleIntervalValue = document.getElementById('cycle-interval-value');
+      const resetBtn = document.getElementById('setting-reset');
+
+      /* ---------- module: search-history ---------- */
+      let history = loadHistory();
+      let historyIndex = -1;
+      let originalInputValue = '';
+
+      function loadHistory() {
+        try {
+          return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveHistory() {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+      }
+
+      function addHistory(q, engine) {
+        history = history.filter(item => item.q !== q);
+        history.unshift({ q, engine, time: Date.now() });
+        if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+        saveHistory();
+      }
+
+      input.addEventListener('focus', () => {
+        historyIndex = -1;
+        originalInputValue = input.value;
+      });
+
+      input.addEventListener('blur', () => {
+        historyIndex = -1;
+      });
+
+      input.addEventListener('input', () => {
+        historyIndex = -1;
+        originalInputValue = input.value;
+      });
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (history.length === 0) return;
+          if (historyIndex < 0) {
+            historyIndex = history.length - 1;
+            originalInputValue = input.value;
+          } else {
+            historyIndex = Math.max(0, historyIndex - 1);
+          }
+          if (history[historyIndex]) input.value = history[historyIndex].q;
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (history.length === 0 || historyIndex < 0) return;
+          if (historyIndex < history.length - 1) {
+            historyIndex++;
+            if (history[historyIndex]) input.value = history[historyIndex].q;
+          } else {
+            input.value = originalInputValue;
+            historyIndex = -1;
+          }
+        } else if (e.key === 'Escape') {
+          historyIndex = -1;
+          input.value = originalInputValue;
+          input.blur();
+        }
+      });
+
+      /* ---------- module: search ---------- */
+      let defaultEngine = localStorage.getItem('default_engine') || 'qianwen';
+
+      function updateActiveBtn(key) {
+        btns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.engine === key);
+        });
+      }
+
+      function doSearch(key, q) {
+        localStorage.setItem('default_engine', key);
+        updateActiveBtn(key);
+        defaultEngine = key;
+        addHistory(q, key);
+        window.location.href = engines[key].url(q);
+      }
+
+      updateActiveBtn(defaultEngine);
+
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.engine;
+          // 点击当前激活引擎：有内容则搜索，为空则进入该引擎首页；
+          // 点击其他引擎：仅切换默认引擎，不搜索、不跳转。
+          if (key === defaultEngine) {
+            const q = input.value.trim();
+            if (q) {
+              doSearch(key, q);
+            } else {
+              window.location.href = engines[key].home;
+            }
+          } else {
+            defaultEngine = key;
+            localStorage.setItem('default_engine', key);
+            updateActiveBtn(key);
+            input.focus();
+          }
+        });
+      });
+
+      /* ---------- module: shortcuts ---------- */
+      let shortcuts = loadShortcuts();
+
+      function loadShortcuts() {
+        try {
+          return JSON.parse(localStorage.getItem(SHORTCUTS_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveShortcuts() {
+        localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(shortcuts));
+      }
+
+      function renderShowcase() {
         shortcutsShowcase.innerHTML = '';
         if (shortcuts.length === 0) return;
         shortcuts.forEach((item, index) => {
@@ -1142,79 +1348,7 @@
           shortcutsShowcase.appendChild(a);
         });
         attachDockExpansion();
-      };
-
-      /* dock 风推开：当光标在某一项 hover 时，按距离分别给：
-         - hover 项 scale 1.4，邻居分别按距离给 scale(1.2 / 1.05) 并横向位移，
-           让它们真的被"撑开"而不是互相遮盖。 */
-      let dockRaf = null;
-      function attachDockExpansion() {
-        const HOVER_SCALE = 1.4;
-        const NEAR_SCALE = 1.2;
-        const FAR_SCALE = 1.05;
-        const ITEM_W = 66;       // 与 CSS 中的 width 对齐
-        const NEAR_PUSH = ITEM_W * 0.5;   // 紧邻推开距离 (px)
-        const FAR_PUSH  = ITEM_W * 0.22;  // 远邻轻推距离 (px)
-
-        function apply(hoverIdx) {
-          if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
-          dockRaf = requestAnimationFrame(() => {
-            const live = shortcutsShowcase.children;
-            for (let i = 0; i < live.length; i++) {
-              const dom = live[i];
-              if (hoverIdx == null) {
-                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
-                dom.style.removeProperty('--tx');
-                dom.style.removeProperty('--sc');
-                continue;
-              }
-              const d = Math.abs(i - hoverIdx);
-              let tx = 0;
-              let sc = 1;
-              if (i === hoverIdx) {
-                sc = HOVER_SCALE;
-              } else if (d === 1) {
-                sc = NEAR_SCALE;
-                tx = (i < hoverIdx ? -1 : 1) * NEAR_PUSH;
-              } else if (d === 2) {
-                sc = FAR_SCALE;
-                tx = (i < hoverIdx ? -1 : 1) * FAR_PUSH;
-              }
-              if (tx === 0 && sc === 1) {
-                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
-                dom.style.removeProperty('--tx');
-                dom.style.removeProperty('--sc');
-              } else {
-                dom.setAttribute('data-tx', '');
-                dom.style.setProperty('--tx', `${tx}px`);
-                dom.style.setProperty('--sc', String(sc));
-              }
-            }
-          });
-        }
-
-        const fresh = Array.from(shortcutsShowcase.children);
-        fresh.forEach((el, i) => {
-          el.addEventListener('mouseenter', () => {
-            // 拖拽期间不要响应 hover 动画
-            if (document.body.classList.contains('is-dragging-shortcut')) return;
-            if (el.classList.contains('dragging-source')) return;
-            apply(i);
-          });
-        });
       }
-
-      // 鼠标离开整个 dock 区域时，一次性复位所有 item
-      shortcutsShowcase.addEventListener('mouseleave', () => {
-        if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
-        const live = shortcutsShowcase.children;
-        for (let i = 0; i < live.length; i++) {
-          const dom = live[i];
-          if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
-          dom.style.removeProperty('--tx');
-          dom.style.removeProperty('--sc');
-        }
-      });
 
       function openShortcutsModal() {
         if (shortcuts.length >= MAX_SHORTCUTS) return;
@@ -1290,363 +1424,226 @@
         if (e.key === 'Enter') addShortcut();
       });
 
-      /* ---------- 帮助按钮 + 拖拽删除 ---------- */
-      if (helpBtn && helpPopover) {
-        let isDraggingShortcut = false;
+      /* ---------- module: dock ---------- */
+      let dockRaf = null;
 
-        function setHelpOpen(open) {
-          helpPopover.classList.toggle('open', open);
-          helpPopover.setAttribute('aria-hidden', String(!open));
-        }
+      /* dock 风推开：当光标在某一项 hover 时，按距离分别给：
+         - hover 项 scale 1.4，邻居分别按距离给 scale(1.2 / 1.05) 并横向位移，
+           让它们真的被"撑开"而不是互相遮盖。 */
+      function attachDockExpansion() {
+        const HOVER_SCALE = 1.4;
+        const NEAR_SCALE = 1.2;
+        const FAR_SCALE = 1.05;
+        const ITEM_W = 66;       // 与 CSS 中的 width 对齐
+        const NEAR_PUSH = ITEM_W * 0.5;   // 紧邻推开距离 (px)
+        const FAR_PUSH  = ITEM_W * 0.22;  // 远邻轻推距离 (px)
 
-        helpBtn.addEventListener('click', e => {
-          // 如果刚刚发生了一次拖拽，忽略随之而来的 click
-          if (isDraggingShortcut) { isDraggingShortcut = false; return; }
-          e.stopPropagation();
-          setSettingsOpen(false);
-          setHelpOpen(!helpPopover.classList.contains('open'));
-        });
-
-        document.addEventListener('click', e => {
-          if (!helpPopover.classList.contains('open')) return;
-          if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
-          setHelpOpen(false);
-        });
-
-        document.addEventListener('keydown', e => {
-          if (e.key === 'Escape' && helpPopover.classList.contains('open')) {
-            setHelpOpen(false);
-          }
-        });
-
-        // 拖拽：每个 shortcut-item 在 dragstart 标记自己、dragend 复原。
-        // 拖拽时原始 item 立刻隐藏（让别人占位），克隆一个 .shortcut-proxy 跟随光标。
-        let proxyEl = null;
-        let proxyOffsetX = 0;
-        let proxyOffsetY = 0;
-        let proxyFromIndex = -1;
-        const PROXY_W = 66;
-        const PROXY_H = 88;
-        let lastDragX = 0;
-        let lastDragY = 0;
-
-        shortcutsShowcase.addEventListener('dragstart', e => {
-          const item = e.target.closest('.shortcut-item');
-          if (!item) return;
-
-          proxyFromIndex = Number(item.dataset.index);
-          e.dataTransfer.setData('text/plain', String(proxyFromIndex));
-          e.dataTransfer.effectAllowed = 'move';
-
-          // 计算光标在 item 内的相对偏移
-          const rect = item.getBoundingClientRect();
-          proxyOffsetX = e.clientX - rect.left;
-          proxyOffsetY = e.clientY - rect.top;
-          lastDragX = rect.left;
-          lastDragY = rect.top;
-
-          // 创建视觉代理节点：固定定位，复制外观
-          proxyEl = item.cloneNode(true);
-          proxyEl.classList.add('shortcut-proxy');
-          proxyEl.style.width = `${PROXY_W}px`;
-          proxyEl.style.height = `${PROXY_H}px`;
-          proxyEl.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1.14)`;
-          proxyEl.setAttribute('aria-hidden', 'true');
-          document.body.appendChild(proxyEl);
-          item.classList.add('dragging-source');
-
-          // 下一帧隐藏原始 item，让列表立即“塌陷”，同时避免同步重排
-          requestAnimationFrame(() => { item.style.opacity = '0'; });
-
-          document.body.classList.add('is-dragging-shortcut');
-          helpBtn.classList.add('dragging-trash');
-        });
-
-        // 持续跟踪光标位置，用 translate3d 避免布局抖动
-        document.addEventListener('dragover', e => {
-          if (!proxyEl) return;
-          lastDragX = e.clientX - proxyOffsetX;
-          lastDragY = e.clientY - proxyOffsetY;
-          proxyEl.style.transform = `translate3d(${lastDragX}px, ${lastDragY}px, 0) scale(1.14)`;
-        });
-
-        function finishDrag({ flyBack = false } = {}) {
-          document.body.classList.remove('is-dragging-shortcut');
-          helpBtn.classList.remove('dragging-trash', 'drop-target');
-
-          const src = shortcutsShowcase.querySelector('.shortcut-item.dragging-source');
-
-          if (!proxyEl) {
-            if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
-            proxyEl = null;
-            proxyFromIndex = -1;
-            return;
-          }
-
-          if (flyBack && src) {
-            const startRect = proxyEl.getBoundingClientRect();
-            const endRect = src.getBoundingClientRect();
-            const startX = startRect.left;
-            const startY = startRect.top;
-            const endX = endRect.left;
-            const endY = endRect.top;
-            const startTime = performance.now();
-            const duration = 260;
-
-            function animate(now) {
-              const t = Math.min(1, (now - startTime) / duration);
-              const e = 1 - Math.pow(1 - t, 3);
-              const x = startX + (endX - startX) * e;
-              const y = startY + (endY - startY) * e;
-              const s = 1.14 + (1 - 1.14) * e;
-              proxyEl.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${s})`;
-              if (t < 1) {
-                requestAnimationFrame(animate);
+        function apply(hoverIdx) {
+          if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
+          dockRaf = requestAnimationFrame(() => {
+            const live = shortcutsShowcase.children;
+            for (let i = 0; i < live.length; i++) {
+              const dom = live[i];
+              if (hoverIdx == null) {
+                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+                dom.style.removeProperty('--tx');
+                dom.style.removeProperty('--sc');
+                continue;
+              }
+              const d = Math.abs(i - hoverIdx);
+              let tx = 0;
+              let sc = 1;
+              if (i === hoverIdx) {
+                sc = HOVER_SCALE;
+              } else if (d === 1) {
+                sc = NEAR_SCALE;
+                tx = (i < hoverIdx ? -1 : 1) * NEAR_PUSH;
+              } else if (d === 2) {
+                sc = FAR_SCALE;
+                tx = (i < hoverIdx ? -1 : 1) * FAR_PUSH;
+              }
+              if (tx === 0 && sc === 1) {
+                if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+                dom.style.removeProperty('--tx');
+                dom.style.removeProperty('--sc');
               } else {
-                if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
-                proxyEl = null;
-                proxyFromIndex = -1;
+                dom.setAttribute('data-tx', '');
+                dom.style.setProperty('--tx', `${tx}px`);
+                dom.style.setProperty('--sc', String(sc));
               }
             }
-            requestAnimationFrame(animate);
+          });
+        }
 
-            requestAnimationFrame(() => {
-              if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
-            });
-            setTimeout(() => {
+        const fresh = Array.from(shortcutsShowcase.children);
+        fresh.forEach((el, i) => {
+          el.addEventListener('mouseenter', () => {
+            // 拖拽期间不要响应 hover 动画
+            if (document.body.classList.contains('is-dragging-shortcut')) return;
+            if (el.classList.contains('dragging-source')) return;
+            apply(i);
+          });
+        });
+      }
+
+      // 鼠标离开整个 dock 区域时，一次性复位所有 item
+      shortcutsShowcase.addEventListener('mouseleave', () => {
+        if (dockRaf) { cancelAnimationFrame(dockRaf); dockRaf = null; }
+        const live = shortcutsShowcase.children;
+        for (let i = 0; i < live.length; i++) {
+          const dom = live[i];
+          if (dom.hasAttribute('data-tx')) dom.removeAttribute('data-tx');
+          dom.style.removeProperty('--tx');
+          dom.style.removeProperty('--sc');
+        }
+      });
+
+      /* ---------- module: dragdrop ---------- */
+      let isDraggingShortcut = false;
+      let proxyEl = null;
+      let proxyOffsetX = 0;
+      let proxyOffsetY = 0;
+      let proxyFromIndex = -1;
+      const PROXY_W = 66;
+      const PROXY_H = 88;
+      let lastDragX = 0;
+      let lastDragY = 0;
+
+      function finishDrag({ flyBack = false } = {}) {
+        document.body.classList.remove('is-dragging-shortcut');
+        helpBtn.classList.remove('dragging-trash', 'drop-target');
+
+        const src = shortcutsShowcase.querySelector('.shortcut-item.dragging-source');
+
+        if (!proxyEl) {
+          if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
+          proxyEl = null;
+          proxyFromIndex = -1;
+          return;
+        }
+
+        if (flyBack && src) {
+          const startRect = proxyEl.getBoundingClientRect();
+          const endRect = src.getBoundingClientRect();
+          const startX = startRect.left;
+          const startY = startRect.top;
+          const endX = endRect.left;
+          const endY = endRect.top;
+          const startTime = performance.now();
+          const duration = 260;
+
+          function animate(now) {
+            const t = Math.min(1, (now - startTime) / duration);
+            const e = 1 - Math.pow(1 - t, 3);
+            const x = startX + (endX - startX) * e;
+            const y = startY + (endY - startY) * e;
+            const s = 1.14 + (1 - 1.14) * e;
+            proxyEl.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${s})`;
+            if (t < 1) {
+              requestAnimationFrame(animate);
+            } else {
               if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
               proxyEl = null;
               proxyFromIndex = -1;
-            }, 320);
-          } else {
+            }
+          }
+          requestAnimationFrame(animate);
+
+          requestAnimationFrame(() => {
+            if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
+          });
+          setTimeout(() => {
             if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
             proxyEl = null;
             proxyFromIndex = -1;
-            if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
-          }
-
-          isDraggingShortcut = true;
-          setTimeout(() => { isDraggingShortcut = false; }, 1000);
+          }, 320);
+        } else {
+          if (proxyEl && proxyEl.parentNode) proxyEl.parentNode.removeChild(proxyEl);
+          proxyEl = null;
+          proxyFromIndex = -1;
+          if (src) { src.style.opacity = ''; src.classList.remove('dragging-source'); }
         }
 
-        shortcutsShowcase.addEventListener('dragend', () => {
-          finishDrag({ flyBack: true });
-        });
-
-        // 垃圾桶本体是 drop target。drop 时读 dataTransfer，由此找出 idx 删除。
-        helpBtn.addEventListener('dragover', e => {
-          if (!document.body.classList.contains('is-dragging-shortcut')) return;
-          e.preventDefault();
-          helpBtn.classList.add('drop-target');
-          e.dataTransfer.dropEffect = 'move';
-        });
-
-        helpBtn.addEventListener('dragleave', () => {
-          helpBtn.classList.remove('drop-target');
-        });
-
-        helpBtn.addEventListener('drop', e => {
-          e.preventDefault();
-          helpBtn.classList.remove('drop-target');
-          if (!document.body.classList.contains('is-dragging-shortcut')) return;
-          const raw = e.dataTransfer.getData('text/plain');
-          const idx = Number(raw);
-          if (Number.isFinite(idx) && idx >= 0 && idx < shortcuts.length) {
-            shortcuts.splice(idx, 1);
-            saveShortcuts();
-            renderShowcase();
-            finishDrag();
-          }
-        });
+        isDraggingShortcut = true;
+        setTimeout(() => { isDraggingShortcut = false; }, 1000);
       }
 
-      fileInput.addEventListener('change', async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        // 先持久化并更新 bgOrder，再设置当前背景，
-        // 这样 setBackground 末尾排程循环时能看到完整列表。
-        await addBgFile(file);
-        await setCurrentBackground(file);
+      shortcutsShowcase.addEventListener('dragstart', e => {
+        const item = e.target.closest('.shortcut-item');
+        if (!item) return;
+
+        proxyFromIndex = Number(item.dataset.index);
+        e.dataTransfer.setData('text/plain', String(proxyFromIndex));
+        e.dataTransfer.effectAllowed = 'move';
+
+        // 计算光标在 item 内的相对偏移
+        const rect = item.getBoundingClientRect();
+        proxyOffsetX = e.clientX - rect.left;
+        proxyOffsetY = e.clientY - rect.top;
+        lastDragX = rect.left;
+        lastDragY = rect.top;
+
+        // 创建视觉代理节点：固定定位，复制外观
+        proxyEl = item.cloneNode(true);
+        proxyEl.classList.add('shortcut-proxy');
+        proxyEl.style.width = `${PROXY_W}px`;
+        proxyEl.style.height = `${PROXY_H}px`;
+        proxyEl.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1.14)`;
+        proxyEl.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(proxyEl);
+        item.classList.add('dragging-source');
+
+        // 下一帧隐藏原始 item，让列表立即“塌陷”，同时避免同步重排
+        requestAnimationFrame(() => { item.style.opacity = '0'; });
+
+        document.body.classList.add('is-dragging-shortcut');
+        helpBtn.classList.add('dragging-trash');
       });
 
-            document.body.addEventListener('keydown', async e => {
-        if (e.target === input || e.target === shortcutTitle || e.target === shortcutUrl) return;
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          await loadBgStore();
-          if (bgOrder.length === 0) return;
-          if (currentBgIndex < 0) currentBgIndex = 0;
-          const nextIndex = Math.min(bgOrder.length - 1, currentBgIndex + 1);
-          if (nextIndex === currentBgIndex) return;
-          currentBgIndex = nextIndex;
-          const file = getBgFileByIndex(currentBgIndex);
-          if (file) setBackground(file);
-        } else if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          await loadBgStore();
-          if (bgOrder.length === 0 || currentBgIndex < 0) return;
-          const nextIndex = Math.max(0, currentBgIndex - 1);
-          if (nextIndex === currentBgIndex) return;
-          currentBgIndex = nextIndex;
-          const file = getBgFileByIndex(currentBgIndex);
-          if (file) setBackground(file);
-        } else if (e.key === 'Enter') {
-          e.preventDefault();
-          await loadBgStore();
-          if (currentBgIndex <= 0 || bgOrder.length === 0) return;
-          const file = getBgFileByIndex(currentBgIndex);
-          if (!file) return;
-          await promoteBgFile(currentBgIndex);
-          currentBgIndex = 0;
-          setBackground(file);
-        } else if (e.key === '+' && !modal.classList.contains('open')) {
-          e.preventDefault();
-          openShortcutsModal();
-        } else if (e.key === 'Escape' && modal.classList.contains('open')) {
-          closeShortcutsModal();
+      // 持续跟踪光标位置，用 translate3d 避免布局抖动
+      document.addEventListener('dragover', e => {
+        if (!proxyEl) return;
+        lastDragX = e.clientX - proxyOffsetX;
+        lastDragY = e.clientY - proxyOffsetY;
+        proxyEl.style.transform = `translate3d(${lastDragX}px, ${lastDragY}px, 0) scale(1.14)`;
+      });
+
+      shortcutsShowcase.addEventListener('dragend', () => {
+        finishDrag({ flyBack: true });
+      });
+
+      // 垃圾桶本体是 drop target。drop 时读 dataTransfer，由此找出 idx 删除。
+      helpBtn.addEventListener('dragover', e => {
+        if (!document.body.classList.contains('is-dragging-shortcut')) return;
+        e.preventDefault();
+        helpBtn.classList.add('drop-target');
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      helpBtn.addEventListener('dragleave', () => {
+        helpBtn.classList.remove('drop-target');
+      });
+
+      helpBtn.addEventListener('drop', e => {
+        e.preventDefault();
+        helpBtn.classList.remove('drop-target');
+        if (!document.body.classList.contains('is-dragging-shortcut')) return;
+        const raw = e.dataTransfer.getData('text/plain');
+        const idx = Number(raw);
+        if (Number.isFinite(idx) && idx >= 0 && idx < shortcuts.length) {
+          shortcuts.splice(idx, 1);
+          saveShortcuts();
+          renderShowcase();
+          finishDrag();
         }
       });
 
-      renderShowcase();
-
-      // 快速连续点按空白处 5 次选择图片/视频（双击极易误触，故提高门槛）
-      const BG_CLICKS_REQUIRED = 5;
-      const BG_CLICK_WINDOW = 500; // 相邻两次点按的最大间隔（ms）
-      let bgClickCount = 0;
-      let lastBgClickTime = 0;
-      document.body.addEventListener('click', e => {
-        if (searchCard.contains(e.target)) return;
-        if (shortcutsShowcase.contains(e.target)) return;
-        if (modal.contains(e.target)) return;
-        if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
-        if (settingsBtn.contains(e.target) || settingsPopover.contains(e.target)) return;
-        const now = Date.now();
-        if (now - lastBgClickTime > BG_CLICK_WINDOW) bgClickCount = 0; // 超时则重新计数
-        bgClickCount++;
-        lastBgClickTime = now;
-        if (bgClickCount >= BG_CLICKS_REQUIRED) {
-          bgClickCount = 0;
-          fileInput.click();
-        }
-      });
-
-      function updateActiveBtn(key) {
-        btns.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.engine === key);
-        });
-      }
-
-      function doSearch(key, q) {
-        localStorage.setItem('default_engine', key);
-        updateActiveBtn(key);
-        defaultEngine = key;
-        addHistory(q, key);
-        window.location.href = engines[key].url(q);
-      }
-
-      let defaultEngine = localStorage.getItem('default_engine') || 'qianwen';
-      updateActiveBtn(defaultEngine);
-
-      input.addEventListener('focus', () => {
-        historyIndex = -1;
-        originalInputValue = input.value;
-      });
-
-      input.addEventListener('blur', () => {
-        historyIndex = -1;
-      });
-
-      input.addEventListener('input', () => {
-        historyIndex = -1;
-        originalInputValue = input.value;
-      });
-
-      input.addEventListener('keydown', e => {
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          if (history.length === 0) return;
-          if (historyIndex < 0) {
-            historyIndex = history.length - 1;
-            originalInputValue = input.value;
-          } else {
-            historyIndex = Math.max(0, historyIndex - 1);
-          }
-          if (history[historyIndex]) input.value = history[historyIndex].q;
-        } else if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          if (history.length === 0 || historyIndex < 0) return;
-          if (historyIndex < history.length - 1) {
-            historyIndex++;
-            if (history[historyIndex]) input.value = history[historyIndex].q;
-          } else {
-            input.value = originalInputValue;
-            historyIndex = -1;
-          }
-        } else if (e.key === 'Escape') {
-          historyIndex = -1;
-          input.value = originalInputValue;
-          input.blur();
-        }
-      });
-
-      btns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.dataset.engine;
-          // 点击当前激活引擎：有内容则搜索，为空则进入该引擎首页；
-          // 点击其他引擎：仅切换默认引擎，不搜索、不跳转。
-          if (key === defaultEngine) {
-            const q = input.value.trim();
-            if (q) {
-              doSearch(key, q);
-            } else {
-              window.location.href = engines[key].home;
-            }
-          } else {
-            defaultEngine = key;
-            localStorage.setItem('default_engine', key);
-            updateActiveBtn(key);
-            input.focus();
-          }
-        });
-      });
-
-
-      function loadHistory() {
-        try {
-          return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-        } catch {
-          return [];
-        }
-      }
-
-      function saveHistory() {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
-      }
-
-      function addHistory(q, engine) {
-        history = history.filter(item => item.q !== q);
-        history.unshift({ q, engine, time: Date.now() });
-        if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
-        saveHistory();
-      }
-
-            let history = loadHistory();
-      let historyIndex = -1;
-      let originalInputValue = '';
-
+      /* ---------- module: background-storage ---------- */
       let bgOrder = [];          // 内存中：hash 数组
       let bgFiles = new Map();   // 内存中：hash -> File
       let currentBgHash = null;
       let currentBgIndex = -1;
-      let activeBgHash = null;   // 当前显示中的 hash
-      let activeBgType = null;
-      let activeBgSrc = null;    // 当前显示用的 blob URL / data URL
-      let currentBgMedia = null; // 当前显示中的媒体元素（crossfade 时临时与旧元素共存）
       let bgStoreLoaded = false;
-
-      const DB_NAME = 'start';
-      const STORE_NAME = 'background';
-      const ORDER_KEY = 'order';
 
       function bgHash(file) {
         const raw = [file.name, String(file.size), file.type || '', String(file.lastModified || 0)].join('|');
@@ -1810,6 +1807,12 @@
         await setBackground(file);
       }
 
+      /* ---------- module: background-render ---------- */
+      let activeBgHash = null;   // 当前显示中的 hash
+      let activeBgType = null;
+      let activeBgSrc = null;    // 当前显示用的 blob URL / data URL
+      let currentBgMedia = null; // 当前显示中的媒体元素（crossfade 时临时与旧元素共存）
+
       async function fileToBlob(file) {
         return new Blob([await file.arrayBuffer()], { type: file.type || 'application/octet-stream' });
       }
@@ -1939,51 +1942,10 @@
         setTimeout(cleanup, 3500); // 兜底：防止 transitionend 不触发
       }
 
-      // 未设置背景时的默认底：深灰底 + 随机颜色（绿/粉/橙）密集波点。
-      // 波点排布在边长 128px 的等边三角形顶点上，不随页面宽度变化而改变间距。
-      function renderDefaultBackground() {
-        bgLayer.innerHTML = '';
-        bgLayer.classList.add('default-bg');
-        bgLayer.style.background = '#333333';
-
-        const palette = {
-          green:  '#3ec27a',
-          pink:   '#ff79a6',
-          orange: '#ff9d3d'
-        };
-        const keys = Object.keys(palette);
-        const color = palette[keys[Math.floor(Math.random() * keys.length)]];
-        bgLayer.style.setProperty('--dot-color', color);
-
-        const side = 48;                  // 等边三角形边长（px）
-        const rowHeight = side * Math.sin(Math.PI / 3); // ≈110.85px
-        const endVh = 200 / 3;            // ≈66.67vh，即 2/3
-        const endPx = (window.innerHeight * endVh) / 100;
-        const cols = Math.ceil(window.innerWidth / side) + 1;
-        const rows = Math.ceil(endPx / rowHeight) + 1;
-
-        const frag = document.createDocumentFragment();
-        for (let r = 0; r < rows; r++) {
-          const y = r * rowHeight;
-          const yFrac = endPx > 0 ? Math.min(1, y / endPx) : 0;
-          const mul = 1 - yFrac;          // 1 → 0
-          const shift = (r % 2) * (side / 2);
-          for (let c = 0; c < cols; c++) {
-            const x = shift + c * side;
-            const dot = document.createElement('div');
-            dot.className = 'default-dot';
-            dot.style.left = `${x}px`;
-            dot.style.top = `${y}px`;
-            dot.style.setProperty('--mul', mul.toFixed(3));
-            frag.appendChild(dot);
-          }
-        }
-        bgLayer.appendChild(frag);
-      }
-
-      /* ---------- 设置：背景循环播放 ---------- */
+      /* ---------- module: background-cycle ---------- */
       let cycleEnabled = localStorage.getItem('bg_cycle') === '1';
       let cycleTypeIsolated = localStorage.getItem('bg_cycle_type_isolated') === '1';
+      let cycleInterval = Math.max(6, Math.min(30, parseInt(localStorage.getItem('bg_cycle_interval'), 10) || 6));
       let cycleTimer = null;
       let cycleVideoEl = null;
 
@@ -2036,7 +1998,7 @@
           v.addEventListener('ended', onCycleVideoEnded);
           cycleVideoEl = v;
         } else {
-          cycleTimer = setTimeout(advanceBgCycle, 6000);
+          cycleTimer = setTimeout(advanceBgCycle, cycleInterval * 1000);
         }
       }
 
@@ -2058,13 +2020,50 @@
         }
       }
 
-      /* ---------- 设置气泡 ---------- */
-      const settingsBtn = document.getElementById('settings-btn');
-      const settingsPopover = document.getElementById('settings-popover');
-      const toggleCycle = settingsPopover.querySelector('[data-setting="cycle"]');
-      const toggleCycleType = settingsPopover.querySelector('[data-setting="cycleTypeIsolated"]');
-      const resetBtn = document.getElementById('setting-reset');
+      /* ---------- module: default-background ---------- */
+      // 未设置背景时的默认底：深灰底 + 随机颜色（绿/粉/橙）密集波点。
+      // 波点排布在边长 48px 的等边三角形顶点上，不随页面宽度变化而改变间距。
+      function renderDefaultBackground() {
+        bgLayer.innerHTML = '';
+        bgLayer.classList.add('default-bg');
+        bgLayer.style.background = '#333333';
 
+        const palette = {
+          green:  '#3ec27a',
+          pink:   '#ff79a6',
+          orange: '#ff9d3d'
+        };
+        const keys = Object.keys(palette);
+        const color = palette[keys[Math.floor(Math.random() * keys.length)]];
+        bgLayer.style.setProperty('--dot-color', color);
+
+        const side = 48;                  // 等边三角形边长（px）
+        const rowHeight = side * Math.sin(Math.PI / 3); // ≈41.57px
+        const endVh = 200 / 3;            // ≈66.67vh，即 2/3
+        const endPx = (window.innerHeight * endVh) / 100;
+        const cols = Math.ceil(window.innerWidth / side) + 1;
+        const rows = Math.ceil(endPx / rowHeight) + 1;
+
+        const frag = document.createDocumentFragment();
+        for (let r = 0; r < rows; r++) {
+          const y = r * rowHeight;
+          const yFrac = endPx > 0 ? Math.min(1, y / endPx) : 0;
+          const mul = 1 - yFrac;          // 1 → 0
+          const shift = (r % 2) * (side / 2);
+          for (let c = 0; c < cols; c++) {
+            const x = shift + c * side;
+            const dot = document.createElement('div');
+            dot.className = 'default-dot';
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
+            dot.style.setProperty('--mul', mul.toFixed(3));
+            frag.appendChild(dot);
+          }
+        }
+        bgLayer.appendChild(frag);
+      }
+
+      /* ---------- module: settings ---------- */
       function setSettingsOpen(open) {
         settingsPopover.classList.toggle('open', open);
         settingsPopover.setAttribute('aria-hidden', String(!open));
@@ -2077,6 +2076,8 @@
       // 初始化开关视觉
       setToggle(toggleCycle, cycleEnabled);
       setToggle(toggleCycleType, cycleTypeIsolated);
+      cycleIntervalInput.value = String(cycleInterval);
+      cycleIntervalValue.textContent = String(cycleInterval);
 
       settingsBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -2123,6 +2124,15 @@
         if (cycleEnabled) scheduleBgCycle();
       });
 
+      cycleIntervalInput.addEventListener('input', () => {
+        const raw = parseInt(cycleIntervalInput.value, 10);
+        const clamped = Math.max(MIN_CYCLE_INTERVAL, Math.min(MAX_CYCLE_INTERVAL, Number.isFinite(raw) ? raw : DEFAULT_CYCLE_INTERVAL));
+        cycleInterval = clamped;
+        localStorage.setItem('bg_cycle_interval', String(cycleInterval));
+        cycleIntervalValue.textContent = String(cycleInterval);
+        if (cycleEnabled) scheduleBgCycle();
+      });
+
       resetBtn.addEventListener('click', async () => {
         if (!confirm('确定清除所有搜索历史和背景吗？快捷链接与默认引擎会保留。')) return;
         await resetAll();
@@ -2148,6 +2158,103 @@
         location.reload();
       }
 
+      /* ---------- module: help ---------- */
+      function setHelpOpen(open) {
+        helpPopover.classList.toggle('open', open);
+        helpPopover.setAttribute('aria-hidden', String(!open));
+      }
+
+      helpBtn.addEventListener('click', e => {
+        // 如果刚刚发生了一次拖拽，忽略随之而来的 click
+        if (isDraggingShortcut) { isDraggingShortcut = false; return; }
+        e.stopPropagation();
+        setSettingsOpen(false);
+        setHelpOpen(!helpPopover.classList.contains('open'));
+      });
+
+      document.addEventListener('click', e => {
+        if (!helpPopover.classList.contains('open')) return;
+        if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
+        setHelpOpen(false);
+      });
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && helpPopover.classList.contains('open')) {
+          setHelpOpen(false);
+        }
+      });
+
+      /* ---------- module: keyboard ---------- */
+      document.body.addEventListener('keydown', async e => {
+        if (e.target === input || e.target === shortcutTitle || e.target === shortcutUrl) return;
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          await loadBgStore();
+          if (bgOrder.length === 0) return;
+          if (currentBgIndex < 0) currentBgIndex = 0;
+          const nextIndex = Math.min(bgOrder.length - 1, currentBgIndex + 1);
+          if (nextIndex === currentBgIndex) return;
+          currentBgIndex = nextIndex;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (file) setBackground(file);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          await loadBgStore();
+          if (bgOrder.length === 0 || currentBgIndex < 0) return;
+          const nextIndex = Math.max(0, currentBgIndex - 1);
+          if (nextIndex === currentBgIndex) return;
+          currentBgIndex = nextIndex;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (file) setBackground(file);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          await loadBgStore();
+          if (currentBgIndex <= 0 || bgOrder.length === 0) return;
+          const file = getBgFileByIndex(currentBgIndex);
+          if (!file) return;
+          await promoteBgFile(currentBgIndex);
+          currentBgIndex = 0;
+          setBackground(file);
+        } else if (e.key === '+' && !modal.classList.contains('open')) {
+          e.preventDefault();
+          openShortcutsModal();
+        } else if (e.key === 'Escape' && modal.classList.contains('open')) {
+          closeShortcutsModal();
+        }
+      });
+
+      /* ---------- module: bg-gesture ---------- */
+      fileInput.addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        // 先持久化并更新 bgOrder，再设置当前背景，
+        // 这样 setBackground 末尾排程循环时能看到完整列表。
+        await addBgFile(file);
+        await setCurrentBackground(file);
+      });
+
+      // 快速连续点按空白处 5 次选择图片/视频（双击极易误触，故提高门槛）
+      const BG_CLICKS_REQUIRED = 5;
+      const BG_CLICK_WINDOW = 500; // 相邻两次点按的最大间隔（ms）
+      let bgClickCount = 0;
+      let lastBgClickTime = 0;
+      document.body.addEventListener('click', e => {
+        if (searchCard.contains(e.target)) return;
+        if (shortcutsShowcase.contains(e.target)) return;
+        if (modal.contains(e.target)) return;
+        if (helpBtn.contains(e.target) || helpPopover.contains(e.target)) return;
+        if (settingsBtn.contains(e.target) || settingsPopover.contains(e.target)) return;
+        const now = Date.now();
+        if (now - lastBgClickTime > BG_CLICK_WINDOW) bgClickCount = 0; // 超时则重新计数
+        bgClickCount++;
+        lastBgClickTime = now;
+        if (bgClickCount >= BG_CLICKS_REQUIRED) {
+          bgClickCount = 0;
+          fileInput.click();
+        }
+      });
+
+      /* ---------- module: init ---------- */
       async function loadBackground() {
         try {
           await loadBgStore();
@@ -2170,6 +2277,7 @@
         }
       }
 
+      renderShowcase();
       loadBackground();
 
       // 默认背景在窗口尺寸变化时重新计算波点网格，使用防抖避免频繁重绘。
@@ -2183,6 +2291,7 @@
         }, 200);
       });
 
+      /* ---------- module: sw-register ---------- */
       // Service Worker: stale-while-revalidate for the main document so the page
       // loads from cache instantly and refreshes in the background every 24h.
       if ('serviceWorker' in navigator) {
