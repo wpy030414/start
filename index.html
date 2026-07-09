@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>开始</title>
   <style>
     :root {
@@ -1073,11 +1076,11 @@
       const shortcutAdd = document.getElementById('shortcut-add');
       const shortcutsShowcase = document.getElementById('shortcuts-showcase');
 
-      const HISTORY_KEY = 'homepage_search_history';
+      const HISTORY_KEY = 'search_history';
       const MAX_HISTORY = 100;
 
       const MAX_BG_HISTORY = 10;
-      const SHORTCUTS_KEY = 'homepage_shortcuts';
+      const SHORTCUTS_KEY = 'shortcuts';
       const MAX_SHORTCUTS = 6;
 
       let shortcuts = loadShortcuts();
@@ -1460,8 +1463,10 @@
       fileInput.addEventListener('change', async e => {
         const file = e.target.files[0];
         if (!file) return;
-        await setCurrentBackground(file);
+        // 先持久化并更新 bgOrder，再设置当前背景，
+        // 这样 setBackground 末尾排程循环时能看到完整列表。
         await addBgFile(file);
+        await setCurrentBackground(file);
       });
 
             document.body.addEventListener('keydown', async e => {
@@ -1532,14 +1537,14 @@
       }
 
       function doSearch(key, q) {
-        localStorage.setItem('homepage_default_engine', key);
+        localStorage.setItem('default_engine', key);
         updateActiveBtn(key);
         defaultEngine = key;
         addHistory(q, key);
         window.location.href = engines[key].url(q);
       }
 
-      let defaultEngine = localStorage.getItem('homepage_default_engine') || 'qianwen';
+      let defaultEngine = localStorage.getItem('default_engine') || 'qianwen';
       updateActiveBtn(defaultEngine);
 
       input.addEventListener('focus', () => {
@@ -1598,7 +1603,7 @@
             }
           } else {
             defaultEngine = key;
-            localStorage.setItem('homepage_default_engine', key);
+            localStorage.setItem('default_engine', key);
             updateActiveBtn(key);
             input.focus();
           }
@@ -1639,7 +1644,7 @@
       let currentBgMedia = null; // 当前显示中的媒体元素（crossfade 时临时与旧元素共存）
       let bgStoreLoaded = false;
 
-      const DB_NAME = 'homepage_bg';
+      const DB_NAME = 'start';
       const STORE_NAME = 'background';
       const ORDER_KEY = 'order';
 
@@ -1653,15 +1658,31 @@
         return (h >>> 0).toString(32);
       }
 
+      // 把 File 序列化成可稳定存入 IndexedDB 的纯对象。
+      // Safari/WebKit 直接存储 File 对象后，再读出来其底层 blob 引用会失效，
+      // 导致 URL.createObjectURL / file.arrayBuffer() 都报 WebKitBlobResource error 1。
+      // 存 {name, type, buffer} 并从 ArrayBuffer 重建 Blob/File 可以彻底避开这个问题。
+      async function bgRecordFromFile(file) {
+        const buffer = await file.arrayBuffer();
+        return { name: file.name, type: file.type || '', size: file.size, lastModified: file.lastModified || 0, buffer };
+      }
+
+      function fileFromRecord(rec) {
+        const blob = new Blob([rec.buffer], { type: rec.type || 'application/octet-stream' });
+        return new File([blob], rec.name || 'background', {
+          type: rec.type || 'application/octet-stream',
+          lastModified: rec.lastModified || Date.now()
+        });
+      }
+
       function openDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open(DB_NAME, 3);
+          const req = indexedDB.open(DB_NAME, 1);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
               db.createObjectStore(STORE_NAME);
             }
-            // v3: 只保留单一 store
             const storesToDelete = Array.from(db.objectStoreNames).filter(n => n !== STORE_NAME);
             for (const n of storesToDelete) db.deleteObjectStore(n);
           };
@@ -1683,13 +1704,19 @@
           bgOrder = Array.isArray(order) ? order : [];
           bgFiles = new Map();
           for (const hash of bgOrder) {
-            const file = await new Promise((res, rej) => {
+            const rec = await new Promise((res, rej) => {
               const tx = db.transaction(STORE_NAME, 'readonly');
               const r = tx.objectStore(STORE_NAME).get(hash);
               r.onsuccess = () => res(r.result);
               r.onerror = () => rej(r.error);
             });
-            if (file) bgFiles.set(hash, file);
+            if (rec && rec.buffer) {
+              try {
+                bgFiles.set(hash, fileFromRecord(rec));
+              } catch (err) {
+                console.warn('背景记录解析失败:', hash, err);
+              }
+            }
           }
           // 顺序和文件不一致时清理孤儿 hash
           bgOrder = bgOrder.filter(h => bgFiles.has(h));
@@ -1701,11 +1728,24 @@
 
       async function persistBgStore() {
         try {
+          // IndexedDB transaction 在 await 非 store 操作时会自动提交，
+          // 因此必须先把所有 File 的 ArrayBuffer 准备好，再一次性同步写入。
+          const records = [];
+          for (const [hash, file] of bgFiles) {
+            try {
+              const rec = await bgRecordFromFile(file);
+              records.push([hash, rec]);
+            } catch (err) {
+              console.warn('背景读取失败，跳过持久化:', hash, err);
+            }
+          }
+
           const db = await openDB();
           const tx = db.transaction(STORE_NAME, 'readwrite');
           const store = tx.objectStore(STORE_NAME);
           store.put(bgOrder, ORDER_KEY);
-          for (const [hash, file] of bgFiles) store.put(file, hash);
+          for (const [hash, rec] of records) store.put(rec, hash);
+
           // 清理 order 里不存在的 hash
           const allKeys = await new Promise((res, rej) => {
             const r = store.getAllKeys();
@@ -1716,6 +1756,7 @@
             if (k === ORDER_KEY || bgFiles.has(k)) continue;
             store.delete(k);
           }
+
           await new Promise((res, rej) => {
             tx.oncomplete = () => res();
             tx.onerror = () => rej(tx.error);
@@ -1769,33 +1810,34 @@
         await setBackground(file);
       }
 
+      async function fileToBlob(file) {
+        return new Blob([await file.arrayBuffer()], { type: file.type || 'application/octet-stream' });
+      }
+
       async function resolveBgSrc(file) {
         const hash = bgHash(file);
-        if (activeBgHash === hash && activeBgSrc) return activeBgSrc;
-        // 注意：此处不立即 revoke 旧 activeBgSrc——旧媒体节点要撑到 crossfade 结束才移除，
-        // 释放动作改由 setBackground 的 cleanup 负责。
+        if (activeBgHash === hash && activeBgSrc) {
+          // 复用前验证 blob URL 是否仍有效：如果已经 revoke，probe 会失败，需要重建。
+          if (activeBgSrc.startsWith('blob:')) {
+            const ok = await probeObjectUrl(activeBgSrc, file.type || 'image/png');
+            if (ok) return activeBgSrc;
+          } else {
+            return activeBgSrc;
+          }
+        }
         activeBgHash = hash;
         activeBgType = file.type || 'image/png';
 
         let url = '';
         try {
-          url = URL.createObjectURL(file);
+          const blob = await fileToBlob(file);
+          url = URL.createObjectURL(blob);
           const ok = await probeObjectUrl(url, activeBgType);
           if (ok) { activeBgSrc = url; return url; }
         } catch (err) {
           console.warn('object URL failed:', err);
         }
         if (url) { try { URL.revokeObjectURL(url); } catch { /* noop */ } }
-
-        // 备用：直接读 file.arrayBuffer() 生成 data URL（Safari 若 File 已被掏空，这里也会失败）
-        try {
-          const buf = await file.arrayBuffer();
-          const dataUrl = await bufferToDataUrl(buf, activeBgType);
-          activeBgSrc = dataUrl;
-          return dataUrl;
-        } catch (err) {
-          console.error('data URL fallback failed:', err);
-        }
 
         activeBgSrc = null;
         return '';
@@ -1898,7 +1940,7 @@
       }
 
       // 未设置背景时的默认底：深灰底 + 随机颜色（绿/粉/橙）密集波点。
-      // 从顶部均匀排布到 2/3 vh，越向下越小，到 2/3 vh 处缩为 0 彻底消失。
+      // 波点排布在边长 128px 的等边三角形顶点上，不随页面宽度变化而改变间距。
       function renderDefaultBackground() {
         bgLayer.innerHTML = '';
         bgLayer.classList.add('default-bg');
@@ -1913,23 +1955,25 @@
         const color = palette[keys[Math.floor(Math.random() * keys.length)]];
         bgLayer.style.setProperty('--dot-color', color);
 
-        const cols = 18;
-        const rows = 14;
-        const endVh = 200 / 3;        // ≈66.67vh，即 2/3
-        const cellX = 100 / cols;     // 每列宽度（百分比）
+        const side = 48;                  // 等边三角形边长（px）
+        const rowHeight = side * Math.sin(Math.PI / 3); // ≈110.85px
+        const endVh = 200 / 3;            // ≈66.67vh，即 2/3
+        const endPx = (window.innerHeight * endVh) / 100;
+        const cols = Math.ceil(window.innerWidth / side) + 1;
+        const rows = Math.ceil(endPx / rowHeight) + 1;
 
         const frag = document.createDocumentFragment();
         for (let r = 0; r < rows; r++) {
-          const yFrac = rows === 1 ? 0 : r / (rows - 1); // 0..1
-          const mul = 1 - yFrac;                          // 1..0
-          const top = (yFrac * endVh).toFixed(3);         // vh
-          const shift = (r % 2) * 0.5;                    // 隔行错位半格，呈波点排布
+          const y = r * rowHeight;
+          const yFrac = endPx > 0 ? Math.min(1, y / endPx) : 0;
+          const mul = 1 - yFrac;          // 1 → 0
+          const shift = (r % 2) * (side / 2);
           for (let c = 0; c < cols; c++) {
-            const left = (c + 0.5 + shift) * cellX;
+            const x = shift + c * side;
             const dot = document.createElement('div');
             dot.className = 'default-dot';
-            dot.style.left = left.toFixed(3) + '%';
-            dot.style.top = top + 'vh';
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
             dot.style.setProperty('--mul', mul.toFixed(3));
             frag.appendChild(dot);
           }
@@ -1938,8 +1982,8 @@
       }
 
       /* ---------- 设置：背景循环播放 ---------- */
-      let cycleEnabled = localStorage.getItem('homepage_bg_cycle') === '1';
-      let cycleTypeIsolated = localStorage.getItem('homepage_bg_cycle_type_isolated') === '1';
+      let cycleEnabled = localStorage.getItem('bg_cycle') === '1';
+      let cycleTypeIsolated = localStorage.getItem('bg_cycle_type_isolated') === '1';
       let cycleTimer = null;
       let cycleVideoEl = null;
 
@@ -2065,7 +2109,7 @@
 
       toggleCycle.addEventListener('click', () => {
         cycleEnabled = !cycleEnabled;
-        localStorage.setItem('homepage_bg_cycle', cycleEnabled ? '1' : '0');
+        localStorage.setItem('bg_cycle', cycleEnabled ? '1' : '0');
         setToggle(toggleCycle, cycleEnabled);
         if (cycleEnabled) scheduleBgCycle();
         else { clearBgCycle(); restoreVideoLoop(); }
@@ -2073,7 +2117,7 @@
 
       toggleCycleType.addEventListener('click', () => {
         cycleTypeIsolated = !cycleTypeIsolated;
-        localStorage.setItem('homepage_bg_cycle_type_isolated', cycleTypeIsolated ? '1' : '0');
+        localStorage.setItem('bg_cycle_type_isolated', cycleTypeIsolated ? '1' : '0');
         setToggle(toggleCycleType, cycleTypeIsolated);
         // 隔离规则在下一次切换生效；若已开启循环则重新排程以立即生效
         if (cycleEnabled) scheduleBgCycle();
@@ -2127,6 +2171,17 @@
       }
 
       loadBackground();
+
+      // 默认背景在窗口尺寸变化时重新计算波点网格，使用防抖避免频繁重绘。
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (!currentBgHash && bgLayer.classList.contains('default-bg')) {
+            renderDefaultBackground();
+          }
+        }, 200);
+      });
 
       // Service Worker: stale-while-revalidate for the main document so the page
       // loads from cache instantly and refreshes in the background every 24h.
