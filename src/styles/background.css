@@ -4,6 +4,10 @@
   inset: 0;
   z-index: 0;
   background: #000;
+  /* 背景是画布不是内容：禁止拖拽出蓝色选中高亮（img/video 默认可被选中） */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #bg-layer img,
@@ -15,6 +19,7 @@
   object-fit: cover;
   display: block;
   filter: saturate(1.05);
+  -webkit-user-drag: none;
 }
 
 /* 暗角与高光纹理仅在真实背景上叠加；白底波点默认背景保持干净 */

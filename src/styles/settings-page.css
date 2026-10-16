@@ -5,6 +5,8 @@
   z-index: 40;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .settings-panel {
