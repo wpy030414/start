@@ -11,7 +11,6 @@
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.03) 100%);
   backdrop-filter: blur(14px) saturate(170%);
-  -webkit-backdrop-filter: blur(14px) saturate(170%);
   color: rgba(255, 255, 255, 0.92);
   font-family: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 20px;

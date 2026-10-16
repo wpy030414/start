@@ -10,7 +10,6 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%);
   backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
   box-shadow:
     0 18px 44px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.08) inset,
