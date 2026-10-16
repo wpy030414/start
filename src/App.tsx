@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BackgroundLayer from './components/BackgroundLayer';
 import SearchCard from './components/SearchCard';
 import ShortcutsShowcase from './components/ShortcutsShowcase';
 import ShortcutsModal from './components/ShortcutsModal';
+import ShortcutDragProxy from './components/ShortcutDragProxy';
 import HelpButton from './components/HelpButton';
 import HelpPopover from './components/HelpPopover';
 import SettingsButton from './components/SettingsButton';
@@ -12,6 +13,8 @@ import { useBackgroundStore } from './hooks/useBackgroundStore';
 import { useBackgroundMedia } from './hooks/useBackgroundMedia';
 import { useBgCycle } from './hooks/useBgCycle';
 import { useBgGesture } from './hooks/useBgGesture';
+import { useShortcuts } from './hooks/useShortcuts';
+import { useShortcutDrag } from './hooks/useShortcutDrag';
 import { clearBgStore } from './lib/db';
 import {
   DEFAULT_CYCLE_INTERVAL, MAX_CYCLE_INTERVAL, MIN_CYCLE_INTERVAL
@@ -42,8 +45,6 @@ export default function App() {
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
   const settingsPopoverRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 输入框 ref 暴露给全局键盘（排除目标）
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutTitleRef = useRef<HTMLInputElement | null>(null);
   const shortcutUrlRef = useRef<HTMLInputElement | null>(null);
@@ -56,14 +57,14 @@ export default function App() {
   const { state: bgState, stateRef: bgStateRef, applyFile, promoteCurrent, navigate, setCurrentIndex } = bgStore;
   const { layers, applyBackground, handleSettled, videoRefCb, getCurrentVideo } = bgMedia;
 
-  // 设置状态
+  // 设置状态（ref，由 SettingsBody 驱动）
   const cycleEnabledRef = useRef(loadBoolSetting('bg_cycle'));
   const cycleIsolatedRef = useRef(loadBoolSetting('bg_cycle_type_isolated'));
   const cycleIntervalRef = useRef(
     loadIntSetting('bg_cycle_interval', DEFAULT_CYCLE_INTERVAL, MIN_CYCLE_INTERVAL, MAX_CYCLE_INTERVAL)
   );
 
-  // 循环调度：advanceBgCycle 计算候选集并环形 +1 切换到下一项
+  // 循环调度
   const advanceBgCycle = useCallback(() => {
     const s = bgStateRef.current;
     if (!s.order.length || s.currentIndex < 0) return;
@@ -87,16 +88,22 @@ export default function App() {
   }, [bgStateRef, setCurrentIndex, applyBackground]);
 
   const { restoreLoop } = useBgCycle({
-    stateRef: bgStateRef,
-    onAdvance: advanceBgCycle,
-    getCurrentVideo,
-    enabled: false, // 启动时传 false，避免 effect 先触发；等 App 挂载后用 ref 驱动
-    cycleTypeIsolated: false,
-    cycleIntervalSec: cycleIntervalRef.current,
+    stateRef: bgStateRef, onAdvance: advanceBgCycle, getCurrentVideo,
+    enabled: false, cycleTypeIsolated: false, cycleIntervalSec: cycleIntervalRef.current,
   });
 
-  // 打开一个时关闭另一个（互斥）
+  // 快捷链接
+  const { shortcuts, addShortcut, removeShortcut } = useShortcuts();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [dropHover, setDropHover] = useState(false);
+
+  const {
+    dragIndex, proxy, handleDragStart, handleDragEnd, handleDocumentDragOver, handleDrop, shouldSuppressClick,
+  } = useShortcutDrag({ onRemove: removeShortcut, maxIndex: shortcuts.length - 1 });
+
   const toggleHelp = () => {
+    if (shouldSuppressClick()) return;
     settings.setOpen(false);
     help.setOpen(!help.open);
   };
@@ -105,7 +112,6 @@ export default function App() {
     settings.setOpen(!settings.open);
   };
 
-  // 启动加载：有背景则应用，否则显示默认波点
   useEffect(() => {
     if (!bgState.loaded) return;
     if (bgState.currentHash) {
@@ -115,32 +121,26 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bgState.loaded]);
 
-  // 选择背景文件：先持久化并更新 order（保证循环排程能看到完整列表），再应用
-  const handleBgFile = useCallback(
-    async (file: File) => {
-      await applyFile(file);
-      void applyBackground(file);
-    },
-    [applyFile, applyBackground]
-  );
+  const handleBgFile = useCallback(async (file: File) => {
+    await applyFile(file);
+    void applyBackground(file);
+  }, [applyFile, applyBackground]);
 
-  const openBgPicker = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  const openBgPicker = useCallback(() => { fileInputRef.current?.click(); }, []);
   useBgGesture(openBgPicker);
 
-  // 全局键盘
+  // 全局键盘（用 state 驱动模态开关，而不是 DOM classList）
   useEffect(() => {
     const onKey = async (e: KeyboardEvent) => {
-      const el = document.activeElement;
-      if (
-        el === searchInputRef.current ||
-        el === shortcutTitleRef.current ||
-        el === shortcutUrlRef.current
-      )
+      // Esc 关闭模态——即使焦点在 shortcut 输入框内也应生效
+      if (e.key === 'Escape' && modalOpen) {
+        setModalOpen(false);
+        if (shortcutTitleRef.current) shortcutTitleRef.current.value = '';
+        if (shortcutUrlRef.current) shortcutUrlRef.current.value = '';
         return;
-      const isModal = document.getElementById('shortcuts-modal')?.classList.contains('open') ?? false;
-
+      }
+      const el = document.activeElement;
+      if (el === searchInputRef.current || el === shortcutTitleRef.current || el === shortcutUrlRef.current) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (!bgStateRef.current.loaded || bgStateRef.current.order.length === 0) return;
@@ -160,65 +160,100 @@ export default function App() {
         if (!file) return;
         await promoteCurrent();
         void applyBackground(file);
-      } else if (e.key === '+' && !isModal) {
+      } else if (e.key === '+' && !modalOpen) {
         e.preventDefault();
-        const modal = document.getElementById('shortcuts-modal');
-        if (modal) modal.classList.add('open');
-        const urlInput = document.getElementById('shortcut-url');
-        if (urlInput instanceof HTMLInputElement) urlInput.focus();
-      } else if (e.key === 'Escape' && isModal) {
-        const modal = document.getElementById('shortcuts-modal');
-        if (modal) modal.classList.remove('open');
+        setModalOpen(true);
+        setTimeout(() => shortcutUrlRef.current?.focus(), 0);
       }
     };
     document.body.addEventListener('keydown', onKey);
     return () => document.body.removeEventListener('keydown', onKey);
-  }, [navigate, promoteCurrent, applyBackground, bgStateRef]);
+  }, [navigate, promoteCurrent, applyBackground, bgStateRef, modalOpen]);
 
-  // 默认背景判定：存储加载完成且当前项无可用文件
+  // document dragover（proxy 跟随光标）
+  useEffect(() => {
+    if (!dragIndex) return;
+    document.addEventListener('dragover', handleDocumentDragOver as EventListener);
+    return () => document.removeEventListener('dragover', handleDocumentDragOver as EventListener);
+  }, [dragIndex, handleDocumentDragOver]);
+
+  // 垃圾桶 drop target（HelpButton 上的 dragover/dragleave/drop）
+  useEffect(() => {
+    const btn = helpBtnRef.current;
+    if (!btn || dragIndex == null) return;
+    const onOver = (e: DragEvent) => { e.preventDefault(); setDropHover(true); };
+    const onLeave = () => setDropHover(false);
+    const onDp = (e: DragEvent) => {
+      e.preventDefault(); setDropHover(false);
+      const idx = Number(e.dataTransfer?.getData('text/plain'));
+      if (Number.isFinite(idx) && idx >= 0 && idx < shortcuts.length) {
+        handleDrop(idx);
+        handleDragEnd();
+      }
+    };
+    // 阻止 defer 导致"已清理"问题：直接绑定 btn
+    btn.addEventListener('dragover', onOver);
+    btn.addEventListener('dragleave', onLeave);
+    btn.addEventListener('drop', onDp);
+    return () => {
+      btn.removeEventListener('dragover', onOver);
+      btn.removeEventListener('dragleave', onLeave);
+      btn.removeEventListener('drop', onDp);
+    };
+  }, [dragIndex, shortcuts.length, handleDrop, handleDragEnd]);
+
+  // 拖拽结束时清理所有状态
+  useEffect(() => {
+    if (dragIndex == null) setDropHover(false);
+  }, [dragIndex]);
+
   const currentFile = bgState.currentHash ? bgStateRef.current.files.get(bgState.currentHash) : null;
   const isDefault = bgStateRef.current.loaded && !currentFile && layers.length === 0;
 
   return (
     <>
-      <BackgroundLayer
-        layers={layers}
-        isDefault={isDefault}
-        onSettled={handleSettled}
-        videoRefCb={videoRefCb}
-      />
+      <BackgroundLayer layers={layers} isDefault={isDefault} onSettled={handleSettled} videoRefCb={videoRefCb} />
       <SearchCard ref={searchInputRef} />
-      <ShortcutsShowcase />
-      <ShortcutsModal titleRef={shortcutTitleRef} urlRef={shortcutUrlRef} />
-      <input
-        ref={fileInputRef}
-        type="file"
-        id="file-input"
-        accept="image/*,video/*"
-        hidden
-        onChange={e => {
-          const file = e.target.files?.[0];
-          if (file) void handleBgFile(file);
-        }}
+      <ShortcutsShowcase
+        shortcuts={shortcuts}
+        dragIndex={dragIndex}
+        hoverIndex={hoverIndex}
+        setHoverIndex={setHoverIndex}
+        onDragStart={handleDragStart as any}
       />
-      <HelpButton rootRef={helpBtnRef} onClick={toggleHelp} />
+      <ShortcutDragProxy item={proxy ? shortcuts[proxy.index] : null} x={proxy?.proxyX ?? 0} y={proxy?.proxyY ?? 0} />
+      <ShortcutsModal
+        open={modalOpen}
+        titleRef={shortcutTitleRef}
+        urlRef={shortcutUrlRef}
+        onClose={() => {
+          setModalOpen(false);
+          if (shortcutTitleRef.current) shortcutTitleRef.current.value = '';
+          if (shortcutUrlRef.current) shortcutUrlRef.current.value = '';
+        }}
+        onAdd={addShortcut}
+      />
+      <input
+        ref={fileInputRef} type="file" id="file-input" accept="image/*,video/*" hidden
+        onChange={e => { const file = e.target.files?.[0]; if (file) void handleBgFile(file); }}
+      />
+      <HelpButton
+        rootRef={helpBtnRef} onClick={toggleHelp}
+        isDragging={dragIndex != null} dropHover={dropHover}
+      />
       <HelpPopover rootRef={helpPopoverRef} open={help.open} />
       <SettingsButton rootRef={settingsBtnRef} onClick={toggleSettings} />
       <SettingsPopover rootRef={settingsPopoverRef} open={settings.open}>
         <SettingsBody
-          cycleEnabledRef={cycleEnabledRef}
-          cycleIsolatedRef={cycleIsolatedRef}
-          cycleIntervalRef={cycleIntervalRef}
-          restoreLoop={restoreLoop}
+          cycleEnabledRef={cycleEnabledRef} cycleIsolatedRef={cycleIsolatedRef}
+          cycleIntervalRef={cycleIntervalRef} restoreLoop={restoreLoop}
         />
       </SettingsPopover>
     </>
   );
 }
 
-/* ---------- 设置子组件（内联，避免 props 透传污染 App） ---------- */
-
-import { useState } from 'react';
+/* ---------- SettingsBody ---------- */
 
 function SettingsBody({
   cycleEnabledRef, cycleIsolatedRef, cycleIntervalRef, restoreLoop,
@@ -228,21 +263,19 @@ function SettingsBody({
   cycleIntervalRef: { current: number };
   restoreLoop: () => void;
 }) {
-  const [cycleEnabled, setCycleEnabled] = useState(cycleEnabledRef.current);
-  const [cycleIsolated, setCycleIsolated] = useState(cycleIsolatedRef.current);
+  const [cycleEnabled, setCycleEnabled] = useState(() => cycleEnabledRef.current);
+  const [cycleIsolated, setCycleIsolated] = useState(() => cycleIsolatedRef.current);
   const [cycleInterval, setCycleInterval] = useState(() => String(cycleIntervalRef.current));
 
   const toggleCycle = () => {
     const next = !cycleEnabled;
-    setCycleEnabled(next);
-    cycleEnabledRef.current = next;
+    setCycleEnabled(next); cycleEnabledRef.current = next;
     saveBoolSetting('bg_cycle', next);
     if (!next) restoreLoop();
   };
   const toggleIsolated = () => {
     const next = !cycleIsolated;
-    setCycleIsolated(next);
-    cycleIsolatedRef.current = next;
+    setCycleIsolated(next); cycleIsolatedRef.current = next;
     saveBoolSetting('bg_cycle_type_isolated', next);
   };
   const handleInterval = (v: string) => {
@@ -254,42 +287,30 @@ function SettingsBody({
   };
   const handleReset = () => {
     if (!confirm('确定清除所有搜索历史和背景吗？快捷链接与默认引擎会保留。')) return;
-    try { localStorage.removeItem('search_history'); } catch { /* noop */ }
+    try { localStorage.removeItem('search_history'); } catch {}
     void clearBgStore().then(() => location.reload());
   };
 
   return <>
     <div className="setting-row">
       <span className="setting-label">循环播放</span>
-      <button type="button" className="toggle" role="switch"
-        aria-checked={cycleEnabled} aria-label="循环播放"
-        data-setting="cycle" onClick={toggleCycle}>
+      <button type="button" className="toggle" role="switch" aria-checked={cycleEnabled} aria-label="循环播放" data-setting="cycle" onClick={toggleCycle}>
         <span className="toggle-knob" />
       </button>
     </div>
     <div className="setting-row">
       <span className="setting-label">循环类型隔离</span>
-      <button type="button" className="toggle" role="switch"
-        aria-checked={cycleIsolated} aria-label="循环类型隔离"
-        data-setting="cycleTypeIsolated" onClick={toggleIsolated}>
+      <button type="button" className="toggle" role="switch" aria-checked={cycleIsolated} aria-label="循环类型隔离" data-setting="cycleTypeIsolated" onClick={toggleIsolated}>
         <span className="toggle-knob" />
       </button>
     </div>
     <div className="setting-row setting-slider-row">
       <span className="setting-label">
         <span>切换周期</span>
-        <span className="setting-value">
-          <span>{Number.isFinite(parseInt(cycleInterval)) ? Math.max(MIN_CYCLE_INTERVAL, Math.min(MAX_CYCLE_INTERVAL, parseInt(cycleInterval))) : cycleIntervalRef.current}</span>s
-        </span>
+        <span className="setting-value"><span>{Number.isFinite(parseInt(cycleInterval)) ? Math.max(MIN_CYCLE_INTERVAL, Math.min(MAX_CYCLE_INTERVAL, parseInt(cycleInterval))) : cycleIntervalRef.current}</span>s</span>
       </span>
-      <input type="range" id="cycle-interval" className="setting-slider"
-        min={MIN_CYCLE_INTERVAL} max={MAX_CYCLE_INTERVAL} step="1"
-        value={cycleInterval}
-        onChange={e => handleInterval(e.target.value)}
-        aria-label="切换周期" />
+      <input type="range" id="cycle-interval" className="setting-slider" min={MIN_CYCLE_INTERVAL} max={MAX_CYCLE_INTERVAL} step="1" value={cycleInterval} onChange={e => handleInterval(e.target.value)} aria-label="切换周期" />
     </div>
-    <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
-      重置
-    </button>
+    <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>重置</button>
   </>;
 }
