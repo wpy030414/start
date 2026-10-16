@@ -35,7 +35,7 @@ start/
 │   ├── 404.html            # GH Pages 冷深链兜底：/?spa=<encoded> → 应用还原路径
 │   ├── worker.js           # 旧 SW 墓碑
 │   └── icons/              # PWA manifest 图标（192/512/maskable）
-├── e2e/                    # Playwright：10 个 spec + helpers 覆盖全部 MVP
+├── e2e/                    # Playwright：13 个 spec + helpers 覆盖全部 MVP
 │   ├── helpers/bg.ts       # addBgViaSettings / addOneBg（经 /settings 添加背景）
 │   └── *.spec.ts
 └── src/
@@ -62,7 +62,7 @@ start/
     │   └── proxy.ts        # 跨域抓取（p.xrl.im/?url=）、favicon 解析、hostname
     ├── hooks/
     │   ├── useRoute.ts           # 极简 path 路由（pushState + 手动派发 popstate；切换包 View Transitions，气泡↔设置卡容器变形）
-    │   ├── useSearchHistory.ts   # 非受控 input + ↑/↓/Esc 翻阅
+    │   ├── useSearchHistory.ts   # 非受控 input + ↑/↓ 翻阅 + Enter 提交（输入法守卫）
     │   ├── useBackgroundStore.ts # order/files/hash/index 内存 + IDB 持久化 + remove
     │   ├── useBackgroundMedia.ts # crossfade 层栈（BgLayer 声明式 + BgMedia 命令式 reveal + clearBackground）
     │   ├── useBgCycle.ts         # effect 依赖驱动排程（图片 setTimeout / 视频 ended）
@@ -88,8 +88,8 @@ start/
 
 下列功能构成最小可用产品，任何重构都必须保留它们的行为：
 
-1. **三引擎搜索**：千问（默认）/ 必应 / 哔哩哔哩。再次点击当前引擎图标发起搜索（留空则进入该引擎首页），点击其他引擎仅切换。默认引擎记忆在 localStorage `default_engine`。
-2. **搜索历史**：`↑` / `↓` 浏览（↑ 首按落在最旧一条、连续 ↑ 向新方向）、`Esc` 复位，去重后最多 100 条。存 `search_history`（`{q, engine, time}[]`）。
+1. **三引擎搜索**：千问（默认）/ 必应 / 哔哩哔哩。焦点在搜索框时按 `Enter`，或再次点击当前引擎图标，发起搜索（留空则进入该引擎首页）；点击其他引擎仅切换。默认引擎记忆在 localStorage `default_engine`。`Enter` 必须过输入法守卫：组合中、`isComposing`、`keyCode 229`、以及 `compositionend` 后 100ms 内的回车一律不算搜索。
+2. **搜索历史**：`↑` / `↓` 浏览（↑ 首按落在**最新**一条、连续 ↑ 向旧推进；↓ 反向回退，已在最新一条时再按 ↓ 退出翻阅并复原原文 —— 队列首尾不相连）、`Esc` 复位，去重后最多 100 条。存 `search_history`（`{q, engine, time}[]`）。
 3. **自定义背景**：在设置页 `/settings` 添加图片 / 视频（支持多选），立即应用并交叉溶解；列表支持「设为当前」（置顶）与「删除单个」（删当前自动切到剩余项，删空回默认波点底）。
 4. **背景历史**：最近 12 个，首页 `←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
 5. **设置页 `/settings`**：左下角齿轮进入（真链接 + pushState 拦截）。含背景管理与「背景循环」档位（6s / 30s / 不循环，实时生效）；标题行右侧「清除所有数据」清除站点全部数据——localStorage、IndexedDB 背景库、Cache Storage 与 SW 注册，随后整页重载（等同全新访客）。
@@ -104,6 +104,8 @@ start/
 - React 19 + hooks，输入框**非受控**（ref 直写 value）；状态管理全部自定义 hooks，不使用外部库（**路由也不引库**：`useRoute` 手写 pushState + 手动派发 popstate）。
 - 页面切换动画用原生 **View Transitions**（`startViewTransition` + `flushSync` 包裹路由更新；`#settings-btn` 与 `.settings-panel` 共用 `view-transition-name: settings-entry` 做容器变形），不支持的浏览器瞬时切换；背景层与设置页禁用 `user-select`（图片/视频默认可被拖拽选中出蓝色高亮）。
 - 背景域（store/media/cycle）由 `App.tsx` 常驻持有，`BackgroundLayer` 跨路由不卸载；首页键盘监听随 `HomePage` 挂载/卸载，天然只在首页生效。背景的添加/删除/设为当前只发生在 `/settings`。
+- **`Enter` 是双语义键**：焦点在 `#search-input` 内 → `useSearchHistory` 消费为「搜索 / 进引擎首页」；`HomePage` 全局监听在焦点位于搜索框 / 快捷链接输入框时直接返回，其余情况 `Enter` 仍是「背景历史置顶」。
+- **输入法组合期间所有按键归 IME**（包括用 `↑`/`↓` 选候选词）：hook 直接返回，不 `preventDefault`、不改写 `value`，否则会冲掉正在组合的文本。
 - 冷深链链路：GH Pages 404 → `public/404.html` → `/?spa=<encodeURIComponent(path+search+hash)>` → `main.tsx` `consumeSpaRedirect()` `replaceState` 还原（`URLSearchParams.get` 已解码一次，**勿再 `decodeURIComponent`**；只接受站内绝对路径）。
 - 跨域快捷链接 / favicon 必须通过反代 `https://p.xrl.im/?url=…`。
 - IndexedDB 事务中不在相关读写请求之间插入 `await`；需连续操作时，在一个事务内同步收集 keys/values，再为新写入创建新事务。

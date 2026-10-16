@@ -41,7 +41,7 @@ App（路由壳 + 背景域 owner）
 | `useBackgroundStore` | 背景 order/files/hash/index 内存态 + IndexedDB 持久化，提供 add/navigate/promote/remove |
 | `useBackgroundMedia` | 交叉溶解层栈：声明式 BgLayer + 命令式 reveal，2.5s blob URL 探测 + data: URL 回退 |
 | `useBgCycle` | effect 依赖驱动排程：图片 setTimeout / 视频 ended → onAdvance |
-| `useSearchHistory` | 非受控 input ↑/↓/Esc 翻阅 + localStorage 持久化 |
+| `useSearchHistory` | 非受控 input 的键盘语义：↑/↓ 翻阅 + Enter 提交（含输入法守卫）+ localStorage 持久化 |
 | `useShortcuts` | localStorage 快捷链接增删 + 代理抓取元数据（标题 / favicon） |
 | `useShortcutDrag` | HTML5 拖拽状态机：proxy 跟随 / 飞回动画 / click 抑制 |
 | `usePopover` | 气泡 open/close + 外部点击 / Esc 关闭 |

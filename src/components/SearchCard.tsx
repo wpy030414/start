@@ -1,7 +1,6 @@
 import { forwardRef, useRef, useState } from 'react';
-import { DEFAULT_ENGINE_KEY, type EngineDef } from '../lib/constants';
-import { toEngineDef } from '../lib/engines';
-import { loadDefaultEngineSlot, loadSlotEntries } from '../lib/engines';
+import { DEFAULT_ENGINE_KEY, searchUrl, type EngineDef } from '../lib/constants';
+import { loadDefaultEngineSlot, loadSlotEntries, toEngineDef } from '../lib/engines';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 import { ENGINE_ICON_MAP } from './icons';
 
@@ -16,7 +15,6 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [slots] = useState(loadSlotEntries);
   const [defaultSlot, setDefaultSlot] = useState(() => loadDefaultEngineSlot(slots));
-  const { addHistory, handleFocus, handleBlur, handleInput, handleKeyDown } = useSearchHistory(inputRef);
 
   // 合并内部 ref 与外部 forwarded ref
   const setRefs = (el: HTMLInputElement | null) => {
@@ -25,22 +23,33 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
     else if (ref) ref.current = el;
   };
 
-  function doSearch(def: EngineDef, q: string) {
-    addHistory(q, def.id || def.name);
-    window.location.href = def.urlTemplate.replace('{q}', encodeURIComponent(q));
+  /** 发起搜索：有词则以该引擎搜索，留空则进入该引擎首页。 */
+  function runEngine(def: EngineDef, q: string) {
+    if (q) {
+      addHistory(q, def.id || def.name);
+      window.location.href = searchUrl(def, q);
+    } else {
+      window.location.href = def.home;
+    }
   }
+
+  /** 回车提交：走当前默认引擎槽位，与「再次点击当前引擎图标」同一语义。 */
+  function submit(q: string) {
+    const entry = slots[defaultSlot];
+    if (entry) runEngine(toEngineDef(entry), q);
+  }
+
+  const {
+    addHistory, handleFocus, handleBlur, handleInput, handleKeyDown,
+    handleCompositionStart, handleCompositionEnd,
+  } = useSearchHistory(inputRef, submit);
 
   function handleEngineClick(i: number) {
     const entry = slots[i];
     if (!entry) return;
     const def = toEngineDef(entry);
     if (i === defaultSlot) {
-      const q = inputRef.current?.value.trim() ?? '';
-      if (q) {
-        doSearch(def, q);
-      } else {
-        window.location.href = def.home;
-      }
+      runEngine(def, inputRef.current?.value.trim() ?? '');
     } else {
       setDefaultSlot(i);
       localStorage.setItem(DEFAULT_ENGINE_KEY, String(i));
@@ -63,6 +72,8 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
             onBlur={handleBlur}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
           />
           <div className="engine-buttons">
             {slots.map((entry, i) => {

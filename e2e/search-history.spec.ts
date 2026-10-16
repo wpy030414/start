@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('搜索历史', () => {
-  test('ArrowUp 从最旧开始翻阅', async ({ page }) => {
+  test('ArrowUp 从最新一条开始翻阅，队列首尾不相连', async ({ page }) => {
     await page.addInitScript(() =>
       localStorage.setItem(
         'search_history',
@@ -16,19 +16,22 @@ test.describe('搜索历史', () => {
     const input = page.locator('#search-input');
     await input.click();
 
+    // 首个 ↑ 落在最近搜索过的一条，继续 ↑ 才向旧推进
     await input.press('ArrowUp');
-    await expect(input).toHaveValue('oldest');
+    await expect(input).toHaveValue('newest');
     await input.press('ArrowUp');
     await expect(input).toHaveValue('middle');
     await input.press('ArrowUp');
-    await expect(input).toHaveValue('newest');
+    await expect(input).toHaveValue('oldest');
+    // 到最旧后停住，不回绕到最新
     await input.press('ArrowUp');
-    await expect(input).toHaveValue('newest');
+    await expect(input).toHaveValue('oldest');
 
     await input.press('ArrowDown');
     await expect(input).toHaveValue('middle');
     await input.press('ArrowDown');
-    await expect(input).toHaveValue('oldest');
+    await expect(input).toHaveValue('newest');
+    // 到最新后退出翻阅、回到原文，同样不回绕到最旧
     await input.press('ArrowDown');
     await expect(input).toHaveValue('');
   });
@@ -47,7 +50,7 @@ test.describe('搜索历史', () => {
     const input = page.locator('#search-input');
     await input.click();
     await input.press('ArrowUp');
-    await expect(input).toHaveValue('b');
+    await expect(input).toHaveValue('a');
     await input.fill('new');
     await input.press('ArrowDown');
     await expect(input).toHaveValue('new');
