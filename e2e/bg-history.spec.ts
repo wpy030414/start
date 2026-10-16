@@ -71,14 +71,14 @@ test.describe('背景历史键盘导航', () => {
     expect(order[0]).toBeTruthy();
   });
 
-  test('背景历史上限为 10', async ({ page }) => {
+  test('背景历史上限为 12', async ({ page }) => {
     test.slow();
     await page.goto('/');
-    for (let i = 1; i <= 11; i++) {
+    for (let i = 1; i <= 13; i++) {
       await addOneBg(page, `bg_${String(i).padStart(2, '0')}.png`);
     }
     const order = await readOrder(page);
-    expect(order).toHaveLength(10);
+    expect(order).toHaveLength(12);
   });
 
   test('页面加载恢复背景', async ({ page }) => {

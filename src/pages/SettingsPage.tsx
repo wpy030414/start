@@ -3,16 +3,14 @@ import type { BgStoreState } from '../hooks/useBackgroundStore';
 import { navigateTo } from '../hooks/useRoute';
 import { clearBgStore } from '../lib/db';
 import {
-  BUILTIN_ENGINE_ICONS,
   CYCLE_MODES,
-  ENGINE_PRESETS,
-  HISTORY_KEY,
-  faviconUrl,
+  DB_NAME,
+  ENGINE_SLOTS,
   type CycleMode,
-  type EngineDef,
+  type EngineSlotEntry,
 } from '../lib/constants';
-import { loadDefaultEngineSlot, loadEngineSlots, saveEngineSlots } from '../lib/engines';
-import { BingIcon, BilibiliIcon, QianwenIcon } from '../components/icons';
+import { loadSlotEntries, saveSlotEntries } from '../lib/engines';
+import { ENGINE_ICON_MAP } from '../components/icons';
 
 interface SettingsPageProps {
   /** 背景域 state（非 ref）：store 变更驱动网格重渲染。 */
@@ -72,37 +70,47 @@ function BgThumb({ file }: { file: File }) {
   return <img className="bg-thumb" src={url} alt={file.name} onError={() => setFailed(true)} />;
 }
 
-const ENGINE_ICONS: Record<string, typeof QianwenIcon> = {
-  qianwen: QianwenIcon,
-  bing: BingIcon,
-  bilibili: BilibiliIcon,
-};
+const ENGINE_ICONS = ENGINE_ICON_MAP;
 
-/** 引擎槽位图标：内置 SVG 保持原色；其余直连域名 favicon（no-referrer），失败以首字母覆盖。 */
-function EngineSlotIcon({ def }: { def: EngineDef }) {
-  const [failed, setFailed] = useState(false);
-  const Icon = BUILTIN_ENGINE_ICONS.has(def.id) ? ENGINE_ICONS[def.id] : undefined;
+/** 引擎槽位图标：预设用内置 SVG；自定义用首字母徽章。 */
+function EngineSlotIcon({ entry }: { entry: EngineSlotEntry }) {
+  const Icon = entry.id ? ENGINE_ICONS[entry.id] : undefined;
   if (Icon) return <Icon />;
-  const src = faviconUrl(def);
-  if (!src) {
-    return <span className="engine-letter" aria-hidden="true">{def.name.slice(0, 1)}</span>;
-  }
-  return (
-    <span className="engine-favicon-wrap">
-      <img
-        className="engine-favicon"
-        src={src}
-        alt={def.name}
-        referrerPolicy="no-referrer"
-        onError={() => setFailed(true)}
-        style={failed ? { display: 'none' } : undefined}
-      />
-      {failed && <span className="engine-letter" aria-hidden="true">{def.name.slice(0, 1)}</span>}
-    </span>
-  );
+  return <span className="engine-letter">{entry.name.slice(0, 1)}</span>;
 }
 
-/** /settings：背景（管理 + 循环档位）+ 搜索引擎（槽位替换）+ 通用（重置）。 */
+/**
+ * 清除站点全部数据：本地存储 + 背景库（及其他遗留 IndexedDB）+ 外壳缓存 + SW 注册。
+ * - 背景库走 clear() 而非 deleteDatabase()：库连接常驻，删除请求会被 blocked 卡住。
+ * - 顺序：先清缓存再注销 SW，背景库放最后 —— 压缩「清完又被内存态写回」的窗口。
+ * - 缓存清空后即使用户仍被旧 SW 控页，刷新也会回落到网络，拿到全新外壳。
+ */
+async function wipeAllSiteData(): Promise<void> {
+  try { localStorage.clear(); } catch { /* noop */ }
+
+  try {
+    if ('caches' in window) {
+      for (const key of await caches.keys()) await caches.delete(key);
+    }
+  } catch { /* noop */ }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      for (const reg of await navigator.serviceWorker.getRegistrations()) await reg.unregister();
+    }
+  } catch { /* noop */ }
+
+  await clearBgStore();
+
+  // 遗留库（如旧 SW 的 sw_main_meta）一并删除；背景库已 clear，跳过
+  try {
+    for (const info of await indexedDB.databases()) {
+      if (info.name && info.name !== DB_NAME) indexedDB.deleteDatabase(info.name);
+    }
+  } catch { /* noop */ }
+}
+
+/** /settings：背景（管理 + 循环档位）+ 搜索引擎（槽位替换）+ 标题行「清除所有数据」。 */
 export default function SettingsPage({
   bgState,
   addBackgroundFiles,
@@ -113,24 +121,34 @@ export default function SettingsPage({
 }: SettingsPageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 引擎槽位（本页自治：localStorage 读写；首页 SearchCard 挂载时读取）
-  const [engineSlots, setEngineSlots] = useState(loadEngineSlots);
-  const [defaultSlot] = useState(() => loadDefaultEngineSlot(engineSlots));
+  // 引擎槽位（本页自治：localStorage 读写；首页 SearchCard 挂载时读盘）
+  const [slots, setSlots] = useState<EngineSlotEntry[]>(loadSlotEntries);
 
-  function replaceSlot(i: number, id: string) {
-    const preset = ENGINE_PRESETS.find(p => p.id === id);
-    if (!preset) return;
-    setEngineSlots(prev => {
-      const next = prev.map((s, idx) => (idx === i ? preset : s));
-      saveEngineSlots(next);
+  function selectPreset(i: number, entry: EngineSlotEntry) {
+    setSlots(prev => {
+      const next = prev.map((s, idx) => (idx === i ? entry : s));
+      saveSlotEntries(next);
+      return next;
+    });
+  }
+
+  function setCustom(i: number, name: string, urlTemplate: string, home: string) {
+    const entry: EngineSlotEntry = { id: '', name, urlTemplate, home };
+    setSlots(prev => {
+      const next = prev.map((s, idx) => (idx === i ? entry : s));
+      saveSlotEntries(next);
       return next;
     });
   }
 
   const handleReset = () => {
-    if (!confirm('确定清除所有搜索历史和背景吗？快捷链接与默认引擎会保留。')) return;
-    try { localStorage.removeItem(HISTORY_KEY); } catch { /* noop */ }
-    void clearBgStore().then(() => location.reload());
+    if (!confirm(
+      '确定清除所有数据吗？\n\n'
+      + '将删除：搜索历史、快捷链接、引擎设置、循环设置、全部背景，'
+      + '以及离线缓存与 Service Worker 注册。\n\n'
+      + '此操作不可恢复。',
+    )) return;
+    void wipeAllSiteData().then(() => location.reload());
   };
 
   return (
@@ -149,6 +167,9 @@ export default function SettingsPage({
             ← 返回
           </a>
           <h2>设置</h2>
+          <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
+            清除所有数据
+          </button>
         </div>
 
         <section className="settings-section">
@@ -231,31 +252,45 @@ export default function SettingsPage({
         <section className="settings-section">
           <h3>搜索引擎</h3>
           <div className="engine-slots">
-            {engineSlots.map((def, i) => (
-              <div className="engine-slot" key={i} data-slot={i}>
-                <span className="engine-slot-icon"><EngineSlotIcon def={def} /></span>
-                <span className="engine-slot-name">{def.name}</span>
-                {i === defaultSlot && <span className="engine-slot-badge">默认</span>}
-                <select
-                  className="engine-select"
-                  aria-label={`替换第 ${i + 1} 个搜索引擎`}
-                  value={def.id}
-                  onChange={e => replaceSlot(i, e.target.value)}
-                >
-                  {ENGINE_PRESETS.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
+            {ENGINE_SLOTS.map((slotDef, i) => {
+              const entry = slots[i];
+              const isCustom = !entry.id;
+              const def = entry;
+              return (
+                <div className="engine-slot" key={i} data-slot={i}>
+                  <span className="engine-slot-icon"><EngineSlotIcon entry={entry} /></span>
+                  <span className="engine-slot-name">{def.name}</span>
+                  {i === 0 && <span className="engine-slot-badge">默认</span>}
+                  <select
+                    className="engine-select"
+                    aria-label={`替换第 ${i + 1} 个搜索引擎`}
+                    value={isCustom ? '__custom__' : def.id}
+                    onChange={e => {
+                      const v = e.target.value;
+                      if (v === '__custom__') {
+                        const name = prompt('搜索引擎名称');
+                        if (!name || !name.trim()) return;
+                        const urlTemplate = prompt('搜索 URL（{q} 为关键词占位）', 'https://example.com/search?q={q}');
+                        if (!urlTemplate || !urlTemplate.trim()) return;
+                        const home = prompt('首页 URL', urlTemplate.replace(/{q}/, ''));
+                        if (!home || !home.trim()) return;
+                        setCustom(i, name.trim(), urlTemplate.trim(), home.trim());
+                      } else {
+                        const preset = slotDef.presets.find(p => p.id === v);
+                        if (!preset) return;
+                        selectPreset(i, { id: preset.id, name: preset.name, urlTemplate: preset.urlTemplate, home: preset.home });
+                      }
+                    }}
+                  >
+                    {slotDef.presets.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                    <option value="__custom__">{isCustom ? `${def.name}（自定义）` : '自定义...'}</option>
+                  </select>
+                </div>
+              );
+            })}
           </div>
-        </section>
-
-        <section className="settings-section">
-          <h3>通用</h3>
-          <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
-            重置
-          </button>
         </section>
       </div>
     </div>

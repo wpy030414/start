@@ -1,9 +1,8 @@
 {
   "name": "start",
   "private": true,
-  "version": "2.0.0",
+  "version": "26.10.16",
   "type": "module",
-  "packageManager": "pnpm@12.11.2",
   "scripts": {
     "dev": "vite",
     "build": "pnpm typecheck && vite build",

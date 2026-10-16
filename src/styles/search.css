@@ -241,17 +241,5 @@
   }
 }
 
-/* 非内置引擎的 favicon 直连（img 已由上方规则反白）；加载失败回退首字母 */
-.engine-btn .engine-letter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  pointer-events: none;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.96);
-  font-size: 12px;
-  font-weight: 600;
-}
+/* 自定义引擎首字母徽章（与内联 SVG 共用 .engine-btn 的反白 filter） */
+.engine-btn .engine-letter { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 5px; background: rgba(255,255,255,0.22); color: rgba(255,255,255,0.96); font-size: 13px; font-weight: 600; pointer-events: none; }

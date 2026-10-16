@@ -44,7 +44,7 @@ start/
     ├── sw-migrate.ts       # 注销 /worker.js 并清理旧缓存/IDB
     ├── pages/
     │   ├── HomePage.tsx    # 首页：搜索/快捷链接/帮助/键盘 ←→Enter+'+Esc/拖拽
-    │   └── SettingsPage.tsx# /settings：背景管理网格 + 循环设置 + 重置（BgThumb 自管 URL）
+    │   └── SettingsPage.tsx# /settings：背景管理网格 + 循环设置 + 标题行「清除所有数据」（BgThumb 自管 URL）
     ├── styles/             # 全局 CSS 按功能模块拆分（选择器零改动）
     │   ├── base.css        # 变量 + reset + html,body
     │   ├── background.css  # #bg-layer + 暗角伪元素 + default-bg/default-dot
@@ -91,8 +91,8 @@ start/
 1. **三引擎搜索**：千问（默认）/ 必应 / 哔哩哔哩。再次点击当前引擎图标发起搜索（留空则进入该引擎首页），点击其他引擎仅切换。默认引擎记忆在 localStorage `default_engine`。
 2. **搜索历史**：`↑` / `↓` 浏览（↑ 首按落在最旧一条、连续 ↑ 向新方向）、`Esc` 复位，去重后最多 100 条。存 `search_history`（`{q, engine, time}[]`）。
 3. **自定义背景**：在设置页 `/settings` 添加图片 / 视频（支持多选），立即应用并交叉溶解；列表支持「设为当前」（置顶）与「删除单个」（删当前自动切到剩余项，删空回默认波点底）。
-4. **背景历史**：最近 10 个，首页 `←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
-5. **设置页 `/settings`**：左下角齿轮进入（真链接 + pushState 拦截）。含背景管理与「背景循环」：开关「循环播放」「循环类型隔离」、切换周期滑块 6-30s（实时生效）；「重置」仅清搜索历史与背景。
+4. **背景历史**：最近 12 个，首页 `←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
+5. **设置页 `/settings`**：左下角齿轮进入（真链接 + pushState 拦截）。含背景管理与「背景循环」档位（6s / 30s / 不循环，实时生效）；标题行右侧「清除所有数据」清除站点全部数据——localStorage、IndexedDB 背景库、Cache Storage 与 SW 注册，随后整页重载（等同全新访客）。
 6. **快捷链接**：按 `+` 添加（自动抓标题与 favicon），最多 6 个，dock 风格悬停（hoverIndex state 驱动 --tx/--sc），拖拽删除。
 7. **帮助气泡**：右下角 `?` 按钮，弹出功能说明（不含背景添加说明），点外 / `Esc` 关闭。
 8. **离线可用**：VitePWA `navigateFallback` + workbox precache，等效 stale-while-revalidate；冷深链 `/settings` 由 `public/404.html` 兜底（`/?spa=<encoded>` → `main.tsx` 渲染前 `replaceState` 还原）。
