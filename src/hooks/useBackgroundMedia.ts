@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { bgHash } from '../lib/bg-hash';
-import { getActiveBgSrc, resolveBgSrc } from '../lib/media-url';
+import { getActiveBgSrc, resetActiveBg, resolveBgSrc } from '../lib/media-url';
 
 export interface BgLayer {
   key: string;                 // hash，React key 兼作层身份
@@ -61,5 +61,20 @@ export function useBackgroundMedia() {
   /** 当前展示中的视频元素（背景循环调度用），可能为 null（图片或无背景）。 */
   const getCurrentVideo = useCallback(() => videoRef.current?.el ?? null, []);
 
-  return { layers, applyBackground, handleSettled, videoRefCb, getCurrentVideo };
+  /** 清空全部背景层（删至无背景时）：revoke 所有 blob URL 并重置模块 active 状态。 */
+  const clearBackground = useCallback(() => {
+    intentRef.current = null; // 丢弃在途的 resolve
+    for (const l of layersRef.current) {
+      for (const u of [l.src, l.prevSrc]) {
+        if (u && u.startsWith('blob:')) {
+          try { URL.revokeObjectURL(u); } catch { /* noop */ }
+        }
+      }
+    }
+    videoRef.current = null;
+    setLayers([]);
+    resetActiveBg();
+  }, []);
+
+  return { layers, applyBackground, handleSettled, videoRefCb, getCurrentVideo, clearBackground };
 }

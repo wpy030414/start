@@ -43,3 +43,7 @@ export const ORDER_KEY = 'order';
 export const DEFAULT_CYCLE_INTERVAL = 6;
 export const MIN_CYCLE_INTERVAL = 6;
 export const MAX_CYCLE_INTERVAL = 30;
+
+export const BG_CYCLE_KEY = 'bg_cycle';
+export const BG_CYCLE_TYPE_ISOLATED_KEY = 'bg_cycle_type_isolated';
+export const BG_CYCLE_INTERVAL_KEY = 'bg_cycle_interval';

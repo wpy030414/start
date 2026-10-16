@@ -155,3 +155,8 @@
   left: 26px;
   right: auto;
 }
+
+/* 齿轮现在是 <a>：去掉默认下划线与颜色 */
+a.help-btn {
+  text-decoration: none;
+}

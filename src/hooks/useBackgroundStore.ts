@@ -119,10 +119,36 @@ export function useBackgroundStore() {
     return file;
   }, []);
 
+  /** 删除单个背景。返回是否命中当前项、以及剩余应展示的下一个文件。 */
+  const remove = useCallback(async (hash: string): Promise<{
+    removedCurrent: boolean;
+    nextFile: File | null;
+  }> => {
+    const s = stateRef.current;
+    if (!s.files.has(hash)) return { removedCurrent: false, nextFile: null };
+    const index = s.order.indexOf(hash);
+    const order = s.order.filter(h => h !== hash);
+    const files = new Map(s.files);
+    files.delete(hash);
+    const removedCurrent = s.currentHash === hash;
+    let { currentHash, currentIndex } = s;
+    if (removedCurrent) {
+      currentHash = order[0] ?? null;
+      currentIndex = order.length ? 0 : -1;
+    } else if (index >= 0 && index < currentIndex) {
+      currentIndex -= 1; // 删除的是当前项之前的项，索引左移
+    }
+    const next: BgStoreState = { ...s, order, files, currentHash, currentIndex };
+    stateRef.current = next;
+    setState(next);
+    await persistBgStore(order, files); // 同事务清理已删除的记录 key
+    return { removedCurrent, nextFile: currentHash ? files.get(currentHash) ?? null : null };
+  }, []);
+
   const getFile = useCallback((hash: string | null): File | null => {
     if (!hash) return null;
     return stateRef.current.files.get(hash) ?? null;
   }, []);
 
-  return { state, stateRef, applyFile, promoteCurrent, navigate, setCurrentIndex, getFile };
+  return { state, stateRef, applyFile, promoteCurrent, navigate, setCurrentIndex, remove, getFile };
 }

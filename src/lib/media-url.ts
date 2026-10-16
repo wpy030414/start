@@ -13,6 +13,13 @@ export function getActiveBgSrc(): string | null {
   return activeBgSrc;
 }
 
+/** 清空模块级 active 状态（背景整体移除时调用；blob 的 revoke 由层栈负责）。 */
+export function resetActiveBg(): void {
+  activeBgHash = null;
+  activeBgType = null;
+  activeBgSrc = null;
+}
+
 async function fileToBlob(file: File): Promise<Blob> {
   return new Blob([await file.arrayBuffer()], { type: file.type || 'application/octet-stream' });
 }
