@@ -32,35 +32,43 @@ start/
 │   └── deploy.yml          # push prod → build → deploy-pages
 ├── public/
 │   ├── CNAME               # start.xrl.im
+│   ├── 404.html            # GH Pages 冷深链兜底：/?spa=<encoded> → 应用还原路径
 │   ├── worker.js           # 旧 SW 墓碑
 │   └── icons/              # PWA manifest 图标（192/512/maskable）
-├── e2e/                    # Playwright：8 个 spec 覆盖全部 MVP
+├── e2e/                    # Playwright：10 个 spec + helpers 覆盖全部 MVP
+│   ├── helpers/bg.ts       # addBgViaSettings / addOneBg（经 /settings 添加背景）
+│   └── *.spec.ts
 └── src/
-    ├── main.tsx            # createRoot + migrateLegacySW
-    ├── App.tsx             # 根组件：组合 hooks/组件，全局键盘，SettingsBody
+    ├── main.tsx            # ?spa= 深链还原 + createRoot + migrateLegacySW
+    ├── App.tsx             # 路由壳 + 背景域 owner（store/media/cycle 常驻，BackgroundLayer 全局）
     ├── sw-migrate.ts       # 注销 /worker.js 并清理旧缓存/IDB
+    ├── pages/
+    │   ├── HomePage.tsx    # 首页：搜索/快捷链接/帮助/键盘 ←→Enter+'+Esc/拖拽
+    │   └── SettingsPage.tsx# /settings：背景管理网格 + 循环设置 + 重置（BgThumb 自管 URL）
     ├── styles/             # 全局 CSS 按功能模块拆分（选择器零改动）
     │   ├── base.css        # 变量 + reset + html,body
     │   ├── background.css  # #bg-layer + 暗角伪元素 + default-bg/default-dot
     │   ├── search.css      # top-third + search-shell/card + engine-btn + 移动端
     │   ├── shortcuts.css   # modal + shortcut-item + proxy + showcase
     │   ├── buttons.css     # help-btn/settings-btn + 垃圾桶/drop-target 变体
-    │   └── popovers.css    # help-popover + settings/toggle/slider/reset
+    │   ├── popovers.css    # help-popover
+    │   └── settings-page.css # 设置页布局 + settings/toggle/slider/reset
     ├── lib/
     │   ├── constants.ts    # engines 表、localStorage key、MAX_*、周期上下限
+    │   ├── settings.ts     # localStorage 设置读写（bool/int 钳制）
     │   ├── bg-hash.ts      # FNV-1a base32 文件哈希
     │   ├── db.ts           # IndexedDB 背景存储（Safari 序列化 + 事务纪律）
     │   ├── media-url.ts    # blob URL probe + data: URL 回退（module-level 强引用）
     │   └── proxy.ts        # 跨域抓取（p.xrl.im/?url=）、favicon 解析、hostname
     ├── hooks/
-    │   ├── useSearchHistory.ts    # 非受控 input + ↑/↓/Esc 翻阅
-    │   ├── useBackgroundStore.ts  # order/files/hash/index 内存 + IDB 持久化
-    │   ├── useBackgroundMedia.ts  # crossfade 层栈（BgLayer 声明式 + BgMedia 命令式 reveal）
-    │   ├── useBgCycle.ts          # effect 依赖驱动排程（图片 setTimeout / 视频 ended）
-    │   ├── useBgGesture.ts        # 空白 5 连点 500ms 窗口 + closest 排除区
-    │   ├── useShortcuts.ts        # localStorage 增删 + 代理抓取元数据
-    │   ├── useShortcutDrag.ts     # HTML5 拖拽状态机（proxy/飞回/click 抑制）
-    │   └── usePopover.ts          # 气泡 open + 外点/Esc
+    │   ├── useRoute.ts           # 极简 path 路由（usePath/navigateTo：pushState + 手动派发 popstate）
+    │   ├── useSearchHistory.ts   # 非受控 input + ↑/↓/Esc 翻阅
+    │   ├── useBackgroundStore.ts # order/files/hash/index 内存 + IDB 持久化 + remove
+    │   ├── useBackgroundMedia.ts # crossfade 层栈（BgLayer 声明式 + BgMedia 命令式 reveal + clearBackground）
+    │   ├── useBgCycle.ts         # effect 依赖驱动排程（图片 setTimeout / 视频 ended）
+    │   ├── useShortcuts.ts       # localStorage 增删 + 代理抓取元数据
+    │   ├── useShortcutDrag.ts    # HTML5 拖拽状态机（proxy/飞回/click 抑制）
+    │   └── usePopover.ts         # 气泡 open + 外点/Esc
     └── components/
         ├── icons.tsx              # 3 引擎 SVG + 齿轮/垃圾桶 SVG
         ├── BackgroundLayer.tsx    # #bg-layer 容器 + DefaultDots + BgMedia 层
@@ -71,8 +79,7 @@ start/
         ├── ShortcutDragProxy.tsx  # createPortal(document.body) 拖拽代理
         ├── HelpButton.tsx         # 右下 ?（含垃圾桶形态，class 由 prop 驱动）
         ├── HelpPopover.tsx
-        ├── SettingsButton.tsx
-        └── SettingsPopover.tsx
+        └── SettingsButton.tsx     # 左下齿轮 <a href="/settings">，左键拦截为 pushState
 ```
 
 ---
@@ -83,18 +90,20 @@ start/
 
 1. **三引擎搜索**：千问（默认）/ 必应 / 哔哩哔哩。再次点击当前引擎图标发起搜索（留空则进入该引擎首页），点击其他引擎仅切换。默认引擎记忆在 localStorage `default_engine`。
 2. **搜索历史**：`↑` / `↓` 浏览（↑ 首按落在最旧一条、连续 ↑ 向新方向）、`Esc` 复位，去重后最多 100 条。存 `search_history`（`{q, engine, time}[]`）。
-3. **自定义背景**：快速连续点按空白处 5 次选图 / 视频，立即应用并交叉溶解。
-4. **背景历史**：最近 10 个，`←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
-5. **设置气泡（背景循环）**：左下角齿轮，开关「循环播放」「循环类型隔离」，「切换周期」滑块 6-30s；「重置」仅清搜索历史与背景。
+3. **自定义背景**：在设置页 `/settings` 添加图片 / 视频（支持多选），立即应用并交叉溶解；列表支持「设为当前」（置顶）与「删除单个」（删当前自动切到剩余项，删空回默认波点底）。
+4. **背景历史**：最近 10 个，首页 `←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
+5. **设置页 `/settings`**：左下角齿轮进入（真链接 + pushState 拦截）。含背景管理与「背景循环」：开关「循环播放」「循环类型隔离」、切换周期滑块 6-30s（实时生效）；「重置」仅清搜索历史与背景。
 6. **快捷链接**：按 `+` 添加（自动抓标题与 favicon），最多 6 个，dock 风格悬停（hoverIndex state 驱动 --tx/--sc），拖拽删除。
-7. **帮助气泡**：右下角 `?` 按钮，弹出功能说明，点外 / `Esc` 关闭。
-8. **离线可用**：VitePWA `navigateFallback` + workbox precache，等效 stale-while-revalidate。
+7. **帮助气泡**：右下角 `?` 按钮，弹出功能说明（不含背景添加说明），点外 / `Esc` 关闭。
+8. **离线可用**：VitePWA `navigateFallback` + workbox precache，等效 stale-while-revalidate；冷深链 `/settings` 由 `public/404.html` 兜底（`/?spa=<encoded>` → `main.tsx` 渲染前 `replaceState` 还原）。
 
 ---
 
 ## 关键实现约束
 
-- React 19 + hooks，输入框**非受控**（ref 直写 value）；状态管理全部自定义 hooks，不使用外部库。
+- React 19 + hooks，输入框**非受控**（ref 直写 value）；状态管理全部自定义 hooks，不使用外部库（**路由也不引库**：`useRoute` 手写 pushState + 手动派发 popstate）。
+- 背景域（store/media/cycle）由 `App.tsx` 常驻持有，`BackgroundLayer` 跨路由不卸载；首页键盘监听随 `HomePage` 挂载/卸载，天然只在首页生效。背景的添加/删除/设为当前只发生在 `/settings`。
+- 冷深链链路：GH Pages 404 → `public/404.html` → `/?spa=<encodeURIComponent(path+search+hash)>` → `main.tsx` `consumeSpaRedirect()` `replaceState` 还原（`URLSearchParams.get` 已解码一次，**勿再 `decodeURIComponent`**；只接受站内绝对路径）。
 - 跨域快捷链接 / favicon 必须通过反代 `https://p.xrl.im/?url=…`。
 - IndexedDB 事务中不在相关读写请求之间插入 `await`；需连续操作时，在一个事务内同步收集 keys/values，再为新写入创建新事务。
 - **Safari**：从 IndexedDB 取出的 File 调 `URL.createObjectURL` 可能抛出 WebKitBlobResource error 1 → 存 `{name, type, buffer}` 序列化记录、读取时从 ArrayBuffer 重建 File/Blob。blob URL 用临时 img/video 探测（2.5s 超时），失败回退 FileReader data: URL。
