@@ -24,6 +24,7 @@ test.describe('背景历史键盘导航', () => {
     await addOneBg(page, 'b.png');
     await addOneBg(page, 'a.png');
     await page.click('#settings-back'); // 回首页做键盘导航
+    await expect(page.locator('#search-input')).toBeVisible(); // 等 HomePage 挂载（View Transition 会推迟 DOM 提交）
 
     // ← 切换到上一张 (b)
     await page.keyboard.press('ArrowLeft');
@@ -57,6 +58,7 @@ test.describe('背景历史键盘导航', () => {
     await addOneBg(page, 'b.png');
     await addOneBg(page, 'a.png');
     await page.click('#settings-back');
+    await expect(page.locator('#search-input')).toBeVisible(); // 等 HomePage 挂载（View Transition 会推迟 DOM 提交）
 
     await page.keyboard.press('ArrowLeft');
     await page.waitForTimeout(3700);

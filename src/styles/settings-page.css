@@ -26,6 +26,7 @@
   padding: 20px 22px 22px;
   user-select: none;
   -webkit-user-select: none;
+  view-transition-name: settings-entry; /* 与 #settings-btn 配对：气泡 ↔ 卡容器变形 */
 }
 
 .settings-header {
@@ -173,6 +174,31 @@
   font-size: 13px;
   text-align: center;
   padding: 10px 0 6px;
+}
+
+/* ---------- 容器变形动画：齿轮气泡 ↔ 设置卡（View Transitions） ---------- */
+/* 组：几何插值（transform/width/height，旧气泡矩形 → 新卡矩形），带轻微过冲的液态曲线 */
+::view-transition-group(settings-entry) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.3, 1.18, 0.36, 1);
+}
+
+/* 旧快消（气泡溶解），新稍延迟淡入（卡面浮现），规避首帧挤压感；
+ * 反向（卡 → 气泡）同样生效：旧=卡快消，新=气泡浮现 */
+::view-transition-old(settings-entry) {
+  animation: settings-vt-out 0.16s ease-out forwards;
+}
+
+::view-transition-new(settings-entry) {
+  animation: settings-vt-in 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) 0.05s backwards;
+}
+
+@keyframes settings-vt-out {
+  to { opacity: 0; }
+}
+
+@keyframes settings-vt-in {
+  from { opacity: 0; }
 }
 
 /* ---------- 15. Toggles & Reset（自 popovers.css 迁入，选择器零改动） ---------- */

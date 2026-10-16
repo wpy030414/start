@@ -160,3 +160,8 @@
 a.help-btn {
   text-decoration: none;
 }
+
+/* 容器变形：齿轮气泡 ↔ 设置卡（与 .settings-panel 同名配对，动画见 settings-page.css） */
+#settings-btn {
+  view-transition-name: settings-entry;
+}
