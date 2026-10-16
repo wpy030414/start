@@ -1,30 +1,29 @@
 import { expect, test } from '@playwright/test';
+import { addOneBg } from './helpers/bg';
 
-const SMALL_BG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-  'base64'
-);
-
-async function quintClick(page: import('@playwright/test').Page) {
-  await page.evaluate(() => {
-    for (let i = 0; i < 5; i++) document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+function readOrder(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.evaluate(() => {
+    return new Promise<string[]>(res => {
+      const r = indexedDB.open('start', 1);
+      r.onsuccess = () => {
+        const db = r.result;
+        const tx = db.transaction('background', 'readonly');
+        const g = tx.objectStore('background').get('order');
+        g.onsuccess = () => res(g.result || []);
+        g.onerror = () => res([]);
+      };
+    });
   });
-}
-
-async function selectBg(page: import('@playwright/test').Page, name: string) {
-  const p = page.waitForEvent('filechooser');
-  await quintClick(page);
-  await p.then(fc => fc.setFiles({ name, mimeType: 'image/png', buffer: SMALL_BG }));
-  await expect.poll(() => page.locator('#bg-layer img').count(), { timeout: 5000 }).toBe(1);
 }
 
 test.describe('背景历史键盘导航', () => {
   test('键盘导航穿越历史', async ({ page }) => {
     test.slow();
     await page.goto('/');
-    await selectBg(page, 'c.png');
-    await selectBg(page, 'b.png');
-    await selectBg(page, 'a.png');
+    await addOneBg(page, 'c.png');
+    await addOneBg(page, 'b.png');
+    await addOneBg(page, 'a.png');
+    await page.click('#settings-back'); // 回首页做键盘导航
 
     // ← 切换到上一张 (b)
     await page.keyboard.press('ArrowLeft');
@@ -54,9 +53,10 @@ test.describe('背景历史键盘导航', () => {
 
   test('Enter 置顶背景', async ({ page }) => {
     await page.goto('/');
-    await selectBg(page, 'c.png');
-    await selectBg(page, 'b.png');
-    await selectBg(page, 'a.png');
+    await addOneBg(page, 'c.png');
+    await addOneBg(page, 'b.png');
+    await addOneBg(page, 'a.png');
+    await page.click('#settings-back');
 
     await page.keyboard.press('ArrowLeft');
     await page.waitForTimeout(3700);
@@ -65,18 +65,7 @@ test.describe('背景历史键盘导航', () => {
 
     await page.keyboard.press('Enter');
 
-    const order = await page.evaluate(() => {
-      return new Promise<string[]>(res => {
-        const r = indexedDB.open('start', 1);
-        r.onsuccess = () => {
-          const db = r.result;
-          const tx = db.transaction('background', 'readonly');
-          const g = tx.objectStore('background').get('order');
-          g.onsuccess = () => res(g.result);
-          g.onerror = () => res([]);
-        };
-      });
-    });
+    const order = await readOrder(page);
     expect(order[0]).toBeTruthy();
   });
 
@@ -84,26 +73,16 @@ test.describe('背景历史键盘导航', () => {
     test.slow();
     await page.goto('/');
     for (let i = 1; i <= 11; i++) {
-      await selectBg(page, `bg_${String(i).padStart(2, '0')}.png`);
+      await addOneBg(page, `bg_${String(i).padStart(2, '0')}.png`);
     }
-    const order = await page.evaluate(() => {
-      return new Promise<string[]>(res => {
-        const r = indexedDB.open('start', 1);
-        r.onsuccess = () => {
-          const db = r.result;
-          const tx = db.transaction('background', 'readonly');
-          const g = tx.objectStore('background').get('order');
-          g.onsuccess = () => res(g.result || []);
-          g.onerror = () => res([]);
-        };
-      });
-    });
+    const order = await readOrder(page);
     expect(order).toHaveLength(10);
   });
 
   test('页面加载恢复背景', async ({ page }) => {
     await page.goto('/');
-    await selectBg(page, 'first.png');
+    await addOneBg(page, 'first.png');
+    await page.click('#settings-back');
     await page.reload();
     await expect(page.locator('#bg-layer img')).toHaveCount(1);
   });

@@ -1,27 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { addOneBg } from './helpers/bg';
 
-const SMALL_BG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-  'base64'
-);
-
-async function quintClick(page: import('@playwright/test').Page) {
-  await page.evaluate(() => {
-    for (let i = 0; i < 5; i++) document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  });
-}
-
-async function selectBg(page: import('@playwright/test').Page, name: string) {
-  const p = page.waitForEvent('filechooser');
-  await quintClick(page);
-  await p.then(fc => fc.setFiles({ name, mimeType: 'image/png', buffer: SMALL_BG }));
-  await expect.poll(() => page.locator('#bg-layer img').count(), { timeout: 5000 }).toBe(1);
-}
-
-test.describe('设置气泡', () => {
+test.describe('设置页', () => {
   test('循环播放 toggle', async ({ page }) => {
-    await page.goto('/');
-    await page.click('#settings-btn');
+    await page.goto('/settings');
     const toggle = page.locator('.toggle[data-setting="cycle"]');
     await expect(toggle).toHaveAttribute('aria-checked', 'false');
     await toggle.click();
@@ -33,16 +15,14 @@ test.describe('设置气泡', () => {
   });
 
   test('循环类型隔离 toggle', async ({ page }) => {
-    await page.goto('/');
-    await page.click('#settings-btn');
+    await page.goto('/settings');
     const toggle = page.locator('.toggle[data-setting="cycleTypeIsolated"]');
     await toggle.click();
     expect(await page.evaluate(() => localStorage.getItem('bg_cycle_type_isolated'))).toBe('1');
   });
 
   test('切换周期滑块钳制', async ({ page }) => {
-    await page.goto('/');
-    await page.click('#settings-btn');
+    await page.goto('/settings');
     const slider = page.locator('#cycle-interval');
     await slider.evaluate((el: HTMLInputElement) => {
       const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
@@ -57,10 +37,10 @@ test.describe('设置气泡', () => {
   test('循环切换', async ({ page }) => {
     test.slow();
     await page.goto('/');
-    await selectBg(page, 'a.png');
-    await selectBg(page, 'b.png');
+    await addOneBg(page, 'a.png');
+    await addOneBg(page, 'b.png');
+    // 添加后停留在 /settings；背景层全局常驻，可直接断言
 
-    await page.click('#settings-btn');
     await page.locator('.toggle[data-setting="cycle"]').click();
     const slider = page.locator('#cycle-interval');
     await slider.evaluate((el: HTMLInputElement) => {
@@ -76,22 +56,26 @@ test.describe('设置气泡', () => {
   });
 
   test('重置 accept', async ({ page }) => {
-    await page.goto('/');
-    await page.click('#settings-btn');
+    await page.goto('/settings');
     page.on('dialog', d => d.accept());
     await page.click('#setting-reset');
     await page.waitForTimeout(2000); // reload
     const history = await page.evaluate(() => localStorage.getItem('search_history'));
     expect(history).toBeNull();
     await expect(page.locator('#bg-layer.default-bg')).toHaveCount(1);
+    await expect(page).toHaveURL(/\/settings$/);
   });
 
   test('重置 dismiss', async ({ page }) => {
-    await page.goto('/');
-    await page.click('#settings-btn');
+    await page.goto('/settings');
+    await page.locator('.toggle[data-setting="cycle"]').click(); // 制造一个可被"保留"验证的状态
+    const before = await page.evaluate(() => localStorage.getItem('bg_cycle'));
     page.on('dialog', d => d.dismiss());
     await page.click('#setting-reset');
     await page.waitForTimeout(500);
-    await expect(page.locator('#settings-popover')).toHaveClass(/open/);
+    // 未 reload、仍在设置页，设置未被清除
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.locator('#setting-reset')).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('bg_cycle'))).toBe(before);
   });
 });

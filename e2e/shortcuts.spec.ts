@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 
 async function openModal(page: import('@playwright/test').Page) {
-  await page.evaluate(() =>
-    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }))
-  );
-  await expect(page.locator('#shortcuts-modal')).toHaveClass(/open/);
+  // webkit 上 goto 后立即派发时 React 的 body 监听器可能尚未挂载，
+  // 用 poll 重试派发直到模态打开（chromium 一次即中，webkit 最多重试几次）。
+  await expect.poll(async () => {
+    await page.evaluate(() =>
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }))
+    );
+    return await page.locator('#shortcuts-modal').getAttribute('class');
+  }, { timeout: 5000 }).toMatch(/open/);
 }
 
 test.describe('快捷链接', () => {

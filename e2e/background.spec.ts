@@ -1,32 +1,5 @@
 import { expect, test } from '@playwright/test';
-
-/* 1x1 PNG（透明），两张图用不同文件名区分 hash（hash = 名|大小|类型|mtime）。 */
-const PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-  'base64'
-);
-
-/** 在空白区域快速点按 5 次以触发背景文件选择器。 */
-async function quintClick(page: import('@playwright/test').Page) {
-  await page.mouse.click(640, 330);
-  await page.mouse.click(640, 330);
-  await page.mouse.click(640, 330);
-  await page.mouse.click(640, 330);
-  await page.mouse.click(640, 330);
-}
-
-/**
- * 页面内合成 5 连击（间隔为零）。
- * 并行跑测时真实 mouse.click 的间隔可能超过 500ms 手势窗口导致 flaky，
- * 手势门槛本身已由「5 连点触发文件选择器」用例用真实点击覆盖。
- */
-async function quintClickFast(page: import('@playwright/test').Page) {
-  await page.evaluate(() => {
-    for (let i = 0; i < 5; i++) {
-      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    }
-  });
-}
+import { SMALL_PNG, addOneBg } from './helpers/bg';
 
 test.describe('自定义背景', () => {
   test('初始无背景时渲染默认波点底', async ({ page }) => {
@@ -49,39 +22,19 @@ test.describe('自定义背景', () => {
     expect(after).toBeGreaterThan(before);
   });
 
-  test('空白处 5 连点触发文件选择器，4 次不触发', async ({ page }) => {
+  test('首页 5 连点不再触发文件选择器', async ({ page }) => {
     await page.goto('/');
-    // 4 次不触发
-    for (let i = 0; i < 4; i++) await page.mouse.click(640, 330);
-    await page.waitForTimeout(600);
-    // 第 5 次触发（间隔内）
-    const fcPromise = page.waitForEvent('filechooser');
-    await quintClick(page);
-    const fc = await fcPromise;
-    expect(fc).toBeTruthy();
-  });
-
-  test('搜索框 / 快捷链接区域的点击不计入连点', async ({ page }) => {
-    await page.goto('/');
-    await page.mouse.click(640, 120); // 搜索卡区域
-    await page.mouse.click(640, 120);
-    await page.mouse.click(640, 120);
-    await page.mouse.click(640, 120);
-    await page.mouse.click(640, 330); // 只有 1 次有效
-    await page.waitForTimeout(300);
-    let fired = false;
-    const fcPromise = page.waitForEvent('filechooser', { timeout: 1200 }).then(() => (fired = true)).catch(() => {});
-    await page.mouse.click(640, 330); // 第 2 次有效
-    await fcPromise;
+    for (let i = 0; i < 5; i++) await page.mouse.click(640, 330);
+    const fired = await page
+      .waitForEvent('filechooser', { timeout: 1200 })
+      .then(() => true, () => false);
     expect(fired).toBe(false);
+    await expect(page).toHaveURL(/\/$/);
   });
 
-  test('选择图片立即应用并淡入到不透明', async ({ page }) => {
+  test('通过设置页添加图片立即应用并淡入到不透明', async ({ page }) => {
     await page.goto('/');
-    const fcPromise = page.waitForEvent('filechooser');
-    await quintClickFast(page);
-    const fc = await fcPromise;
-    await fc.setFiles({ name: 'bg-a.png', mimeType: 'image/png', buffer: PNG });
+    await addOneBg(page, 'bg-a.png');
 
     const img = page.locator('#bg-layer img');
     await expect(img).toHaveCount(1);
@@ -93,16 +46,13 @@ test.describe('自定义背景', () => {
 
   test('切换背景时新旧媒体交叉溶解后只保留一个', async ({ page }) => {
     await page.goto('/');
-    const fc1Promise = page.waitForEvent('filechooser');
-    await quintClickFast(page);
-    const fc1 = await fc1Promise;
-    await fc1.setFiles({ name: 'bg-a.png', mimeType: 'image/png', buffer: PNG });
+    await addOneBg(page, 'bg-a.png'); // 添加后停留在 /settings，背景层全局可见
     await expect(page.locator('#bg-layer img')).toHaveCount(1);
 
-    const fc2Promise = page.waitForEvent('filechooser');
-    await quintClickFast(page);
-    const fc2 = await fc2Promise;
-    await fc2.setFiles({ name: 'bg-b.png', mimeType: 'image/png', buffer: PNG });
+    const fcPromise = page.waitForEvent('filechooser');
+    await page.click('#add-bg-btn');
+    const fc = await fcPromise;
+    await fc.setFiles({ name: 'bg-b.png', mimeType: 'image/png', buffer: SMALL_PNG });
 
     // 短暂共存（旧层保留至淡入完成）
     await expect
