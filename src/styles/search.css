@@ -240,3 +240,18 @@
     height: 18px;
   }
 }
+
+/* 非内置引擎的 favicon 直连（img 已由上方规则反白）；加载失败回退首字母 */
+.engine-btn .engine-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 12px;
+  font-weight: 600;
+}

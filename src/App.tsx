@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import BackgroundLayer from './components/BackgroundLayer';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
@@ -6,15 +6,8 @@ import { usePath } from './hooks/useRoute';
 import { useBackgroundStore } from './hooks/useBackgroundStore';
 import { useBackgroundMedia } from './hooks/useBackgroundMedia';
 import { useBgCycle } from './hooks/useBgCycle';
-import { loadBoolSetting, loadIntSetting, saveBoolSetting } from './lib/settings';
-import {
-  BG_CYCLE_INTERVAL_KEY,
-  BG_CYCLE_KEY,
-  BG_CYCLE_TYPE_ISOLATED_KEY,
-  DEFAULT_CYCLE_INTERVAL,
-  MAX_CYCLE_INTERVAL,
-  MIN_CYCLE_INTERVAL,
-} from './lib/constants';
+import { loadCycleMode, saveCycleMode } from './lib/settings';
+import { type CycleMode } from './lib/constants';
 
 import './styles/base.css';
 import './styles/background.css';
@@ -34,41 +27,21 @@ export default function App() {
   const { state: bgState, stateRef: bgStateRef, applyFile, promoteCurrent, navigate, setCurrentIndex, remove } = bgStore;
   const { layers, applyBackground, handleSettled, videoRefCb, getCurrentVideo, clearBackground } = bgMedia;
 
-  // 背景循环设置：状态为源；ref 镜像供 advanceBgCycle 稳定读取（useBgCycle 的 effect 依赖不含 onAdvance）
-  const [cycleEnabled, setCycleEnabled] = useState(() => loadBoolSetting(BG_CYCLE_KEY));
-  const [cycleIsolated, setCycleIsolated] = useState(() => loadBoolSetting(BG_CYCLE_TYPE_ISOLATED_KEY));
-  const [cycleIntervalSec, setCycleIntervalSec] = useState(() =>
-    loadIntSetting(BG_CYCLE_INTERVAL_KEY, DEFAULT_CYCLE_INTERVAL, MIN_CYCLE_INTERVAL, MAX_CYCLE_INTERVAL)
-  );
-  const cycleIsolatedRef = useRef(cycleIsolated);
-  cycleIsolatedRef.current = cycleIsolated;
+  // 背景循环档位：状态为源（'6'|'30'|'off'），/settings 上实时生效
+  const [cycleMode, setCycleMode] = useState<CycleMode>(() => loadCycleMode());
 
-  // 循环调度
+  // 循环调度：图库内顺序轮换（图片按周期、视频等 ended 由 useBgCycle 决定）
   const advanceBgCycle = useCallback(() => {
     const s = bgStateRef.current;
-    if (!s.order.length || s.currentIndex < 0) return;
-    const cur = s.files.get(s.order[s.currentIndex]);
-    const curIsVideo = !!(cur && (cur.type || '').startsWith('video/'));
-    const cands: number[] = [];
-    if (!cycleIsolatedRef.current) {
-      for (let i = 0; i < s.order.length; i++) cands.push(i);
-    } else {
-      for (let i = 0; i < s.order.length; i++) {
-        const f = s.files.get(s.order[i]);
-        if (!!(f && (f.type || '').startsWith('video/')) === curIsVideo) cands.push(i);
-      }
-    }
-    if (cands.length < 2) return;
-    const pos = cands.indexOf(s.currentIndex);
-    const nextIndex = cands[pos === -1 ? 0 : (pos + 1) % cands.length];
+    if (s.order.length < 2 || s.currentIndex < 0) return;
+    const nextIndex = (s.currentIndex + 1) % s.order.length;
     if (nextIndex === s.currentIndex) return;
     const file = setCurrentIndex(nextIndex);
     if (file) void applyBackground(file);
   }, [bgStateRef, setCurrentIndex, applyBackground]);
 
-  const { restoreLoop } = useBgCycle({
-    stateRef: bgStateRef, onAdvance: advanceBgCycle, getCurrentVideo,
-    enabled: cycleEnabled, cycleTypeIsolated: cycleIsolated, cycleIntervalSec,
+  useBgCycle({
+    stateRef: bgStateRef, onAdvance: advanceBgCycle, getCurrentVideo, mode: cycleMode,
   });
 
   // 初次加载恢复当前背景
@@ -111,23 +84,11 @@ export default function App() {
     });
   }, [remove, applyBackground, clearBackground]);
 
-  /* ---------- cycle 设置 setter（持久化 + 受控下放） ---------- */
+  /* ---------- cycle 档位 setter（持久化 + 受控下放；切到 off 时 useBgCycle 自动恢复视频循环） ---------- */
 
-  const handleCycleEnabled = useCallback((v: boolean) => {
-    setCycleEnabled(v);
-    saveBoolSetting(BG_CYCLE_KEY, v);
-    if (!v) restoreLoop();
-  }, [restoreLoop]);
-
-  const handleCycleIsolated = useCallback((v: boolean) => {
-    setCycleIsolated(v);
-    saveBoolSetting(BG_CYCLE_TYPE_ISOLATED_KEY, v);
-  }, []);
-
-  const handleCycleInterval = useCallback((n: number) => {
-    const clamped = Math.max(MIN_CYCLE_INTERVAL, Math.min(MAX_CYCLE_INTERVAL, Number.isFinite(n) ? n : DEFAULT_CYCLE_INTERVAL));
-    setCycleIntervalSec(clamped);
-    localStorage.setItem(BG_CYCLE_INTERVAL_KEY, String(clamped));
+  const handleCycleMode = useCallback((m: CycleMode) => {
+    setCycleMode(m);
+    saveCycleMode(m);
   }, []);
 
   const currentFile = bgState.currentHash ? bgStateRef.current.files.get(bgState.currentHash) : null;
@@ -142,12 +103,8 @@ export default function App() {
           addBackgroundFiles={addBackgroundFiles}
           setCurrentBackground={setCurrentBackground}
           removeBackground={removeBackground}
-          cycleEnabled={cycleEnabled}
-          cycleIsolated={cycleIsolated}
-          cycleIntervalSec={cycleIntervalSec}
-          onCycleEnabledChange={handleCycleEnabled}
-          onCycleIsolatedChange={handleCycleIsolated}
-          onCycleIntervalChange={handleCycleInterval}
+          cycleMode={cycleMode}
+          onCycleModeChange={handleCycleMode}
         />
       ) : (
         <HomePage

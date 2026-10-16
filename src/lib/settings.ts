@@ -1,14 +1,19 @@
-/* localStorage 设置项读写：布尔（'1'/'0'）与钳制整数。 */
+/* localStorage 设置项读写。 */
 
-export function loadBoolSetting(key: string): boolean {
-  return localStorage.getItem(key) === '1';
+import { BG_CYCLE_MODE_KEY, type CycleMode } from './constants';
+
+/** 循环档位；缺省时按旧版键（bg_cycle/bg_cycle_interval）迁移，默认不循环。 */
+export function loadCycleMode(): CycleMode {
+  const raw = localStorage.getItem(BG_CYCLE_MODE_KEY);
+  if (raw === '6' || raw === '30' || raw === 'off') return raw;
+  // 旧版迁移：bg_cycle='1' 视为开启，旧周期 >18s 归入 '30'，否则 '6'
+  if (localStorage.getItem('bg_cycle') === '1') {
+    const old = parseInt(localStorage.getItem('bg_cycle_interval') || '', 10);
+    return Number.isFinite(old) && old > 18 ? '30' : '6';
+  }
+  return 'off';
 }
 
-export function saveBoolSetting(key: string, v: boolean): void {
-  localStorage.setItem(key, v ? '1' : '0');
-}
-
-export function loadIntSetting(key: string, fallback: number, min: number, max: number): number {
-  const raw = parseInt(localStorage.getItem(key)!, 10);
-  return Math.max(min, Math.min(max, Number.isFinite(raw) ? raw : fallback));
+export function saveCycleMode(mode: CycleMode): void {
+  localStorage.setItem(BG_CYCLE_MODE_KEY, mode);
 }

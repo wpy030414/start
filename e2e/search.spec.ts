@@ -40,7 +40,7 @@ test.describe('三引擎搜索', () => {
     expect(page.url()).toBe(url);
 
     const stored = await page.evaluate(() => localStorage.getItem('default_engine'));
-    expect(stored).toBe('bilibili');
+    expect(stored).toBe('2'); // 槽位下标（bilibili 为第 3 个槽）
   });
 
   test('默认引擎记忆在 localStorage', async ({ page }) => {

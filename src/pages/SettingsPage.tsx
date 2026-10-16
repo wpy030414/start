@@ -3,10 +3,16 @@ import type { BgStoreState } from '../hooks/useBackgroundStore';
 import { navigateTo } from '../hooks/useRoute';
 import { clearBgStore } from '../lib/db';
 import {
+  BUILTIN_ENGINE_ICONS,
+  CYCLE_MODES,
+  ENGINE_PRESETS,
   HISTORY_KEY,
-  MAX_CYCLE_INTERVAL,
-  MIN_CYCLE_INTERVAL,
+  faviconUrl,
+  type CycleMode,
+  type EngineDef,
 } from '../lib/constants';
+import { loadDefaultEngineSlot, loadEngineSlots, saveEngineSlots } from '../lib/engines';
+import { BingIcon, BilibiliIcon, QianwenIcon } from '../components/icons';
 
 interface SettingsPageProps {
   /** 背景域 state（非 ref）：store 变更驱动网格重渲染。 */
@@ -14,13 +20,9 @@ interface SettingsPageProps {
   addBackgroundFiles: (files: FileList | File[]) => Promise<void>;
   setCurrentBackground: (hash: string) => void;
   removeBackground: (hash: string) => void;
-  /* 背景循环设置：受控，源在 App（localStorage 持久化 + useBgCycle 实时生效）。 */
-  cycleEnabled: boolean;
-  cycleIsolated: boolean;
-  cycleIntervalSec: number;
-  onCycleEnabledChange: (v: boolean) => void;
-  onCycleIsolatedChange: (v: boolean) => void;
-  onCycleIntervalChange: (sec: number) => void;
+  /* 背景循环档位：受控，源在 App（localStorage 持久化 + useBgCycle 实时生效）。 */
+  cycleMode: CycleMode;
+  onCycleModeChange: (mode: CycleMode) => void;
 }
 
 function isPlainLeftClick(e: React.MouseEvent): boolean {
@@ -70,20 +72,60 @@ function BgThumb({ file }: { file: File }) {
   return <img className="bg-thumb" src={url} alt={file.name} onError={() => setFailed(true)} />;
 }
 
-/** /settings：背景管理（添加/设为当前/删除）+ 背景循环设置 + 重置。 */
+const ENGINE_ICONS: Record<string, typeof QianwenIcon> = {
+  qianwen: QianwenIcon,
+  bing: BingIcon,
+  bilibili: BilibiliIcon,
+};
+
+/** 引擎槽位图标：内置 SVG 保持原色；其余直连域名 favicon（no-referrer），失败以首字母覆盖。 */
+function EngineSlotIcon({ def }: { def: EngineDef }) {
+  const [failed, setFailed] = useState(false);
+  const Icon = BUILTIN_ENGINE_ICONS.has(def.id) ? ENGINE_ICONS[def.id] : undefined;
+  if (Icon) return <Icon />;
+  const src = faviconUrl(def);
+  if (!src) {
+    return <span className="engine-letter" aria-hidden="true">{def.name.slice(0, 1)}</span>;
+  }
+  return (
+    <span className="engine-favicon-wrap">
+      <img
+        className="engine-favicon"
+        src={src}
+        alt={def.name}
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        style={failed ? { display: 'none' } : undefined}
+      />
+      {failed && <span className="engine-letter" aria-hidden="true">{def.name.slice(0, 1)}</span>}
+    </span>
+  );
+}
+
+/** /settings：背景（管理 + 循环档位）+ 搜索引擎（槽位替换）+ 通用（重置）。 */
 export default function SettingsPage({
   bgState,
   addBackgroundFiles,
   setCurrentBackground,
   removeBackground,
-  cycleEnabled,
-  cycleIsolated,
-  cycleIntervalSec,
-  onCycleEnabledChange,
-  onCycleIsolatedChange,
-  onCycleIntervalChange,
+  cycleMode,
+  onCycleModeChange,
 }: SettingsPageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 引擎槽位（本页自治：localStorage 读写；首页 SearchCard 挂载时读取）
+  const [engineSlots, setEngineSlots] = useState(loadEngineSlots);
+  const [defaultSlot] = useState(() => loadDefaultEngineSlot(engineSlots));
+
+  function replaceSlot(i: number, id: string) {
+    const preset = ENGINE_PRESETS.find(p => p.id === id);
+    if (!preset) return;
+    setEngineSlots(prev => {
+      const next = prev.map((s, idx) => (idx === i ? preset : s));
+      saveEngineSlots(next);
+      return next;
+    });
+  }
 
   const handleReset = () => {
     if (!confirm('确定清除所有搜索历史和背景吗？快捷链接与默认引擎会保留。')) return;
@@ -110,7 +152,7 @@ export default function SettingsPage({
         </div>
 
         <section className="settings-section">
-          <h3>背景管理</h3>
+          <h3>背景</h3>
           <button type="button" id="add-bg-btn" onClick={() => fileInputRef.current?.click()}>
             添加背景
           </button>
@@ -163,60 +205,57 @@ export default function SettingsPage({
               );
             })}
           </div>
+
+          <div className="setting-row setting-slider-row cycle-row">
+            <span className="setting-label">循环播放周期</span>
+            <input
+              type="range"
+              id="cycle-mode"
+              className="setting-slider"
+              min={0}
+              max={CYCLE_MODES.length - 1}
+              step={1}
+              value={CYCLE_MODES.indexOf(cycleMode)}
+              onChange={e => onCycleModeChange(CYCLE_MODES[Number(e.target.value)] ?? 'off')}
+              aria-label="循环播放周期"
+            />
+            <div className="slider-ticks" aria-hidden="true">
+              <span>6s</span>
+              <span>30s</span>
+              <span>不循环</span>
+            </div>
+          </div>
+          <p className="setting-hint">视频总是等待播放完再切换；「不循环」下视频重复播放</p>
         </section>
 
         <section className="settings-section">
-          <h3>背景循环</h3>
-          <div className="settings-list">
-            <div className="setting-row">
-              <span className="setting-label">循环播放</span>
-              <button
-                type="button"
-                className="toggle"
-                role="switch"
-                aria-checked={cycleEnabled}
-                aria-label="循环播放"
-                data-setting="cycle"
-                onClick={() => onCycleEnabledChange(!cycleEnabled)}
-              >
-                <span className="toggle-knob" />
-              </button>
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">循环类型隔离</span>
-              <button
-                type="button"
-                className="toggle"
-                role="switch"
-                aria-checked={cycleIsolated}
-                aria-label="循环类型隔离"
-                data-setting="cycleTypeIsolated"
-                onClick={() => onCycleIsolatedChange(!cycleIsolated)}
-              >
-                <span className="toggle-knob" />
-              </button>
-            </div>
-            <div className="setting-row setting-slider-row">
-              <span className="setting-label">
-                <span>切换周期</span>
-                <span className="setting-value"><span>{cycleIntervalSec}s</span></span>
-              </span>
-              <input
-                type="range"
-                id="cycle-interval"
-                className="setting-slider"
-                min={MIN_CYCLE_INTERVAL}
-                max={MAX_CYCLE_INTERVAL}
-                step={1}
-                value={String(cycleIntervalSec)}
-                onChange={e => onCycleIntervalChange(parseInt(e.target.value, 10))}
-                aria-label="切换周期"
-              />
-            </div>
-            <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
-              重置
-            </button>
+          <h3>搜索引擎</h3>
+          <div className="engine-slots">
+            {engineSlots.map((def, i) => (
+              <div className="engine-slot" key={i} data-slot={i}>
+                <span className="engine-slot-icon"><EngineSlotIcon def={def} /></span>
+                <span className="engine-slot-name">{def.name}</span>
+                {i === defaultSlot && <span className="engine-slot-badge">默认</span>}
+                <select
+                  className="engine-select"
+                  aria-label={`替换第 ${i + 1} 个搜索引擎`}
+                  value={def.id}
+                  onChange={e => replaceSlot(i, e.target.value)}
+                >
+                  {ENGINE_PRESETS.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
           </div>
+        </section>
+
+        <section className="settings-section">
+          <h3>通用</h3>
+          <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
+            重置
+          </button>
         </section>
       </div>
     </div>

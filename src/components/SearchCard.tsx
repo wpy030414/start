@@ -1,24 +1,48 @@
 import { forwardRef, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
-import { DEFAULT_ENGINE_KEY, ENGINE_ORDER, engines } from '../lib/constants';
-import type { EngineKey } from '../lib/constants';
+import {
+  BUILTIN_ENGINE_ICONS,
+  DEFAULT_ENGINE_KEY,
+  faviconUrl,
+  searchUrl,
+  type EngineDef,
+} from '../lib/constants';
+import { loadDefaultEngineSlot, loadEngineSlots } from '../lib/engines';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 import { BingIcon, BilibiliIcon, QianwenIcon } from './icons';
 
-const ENGINE_ICONS: Record<EngineKey, ComponentType> = {
+const ENGINE_ICONS: Record<string, ComponentType> = {
   qianwen: QianwenIcon,
   bing: BingIcon,
-  bilibili: BilibiliIcon
+  bilibili: BilibiliIcon,
 };
 
-function loadDefaultEngine(): EngineKey {
-  const raw = localStorage.getItem(DEFAULT_ENGINE_KEY);
-  return raw && (raw in engines) ? (raw as EngineKey) : 'qianwen';
+/** 非内置引擎图标：直连域名 favicon（no-referrer），失败时隐藏 img 并以首字母覆盖（img 保持挂载避免布局抖动）。 */
+function EngineFavicon({ def, fallbackClass }: { def: EngineDef; fallbackClass: string }) {
+  const [failed, setFailed] = useState(false);
+  const src = faviconUrl(def);
+  if (!src) {
+    return <span className={fallbackClass} aria-hidden="true">{def.name.slice(0, 1)}</span>;
+  }
+  return (
+    <>
+      <img
+        className="engine-favicon"
+        src={src}
+        alt={def.name}
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        style={failed ? { display: 'none' } : undefined}
+      />
+      {failed && <span className={fallbackClass} aria-hidden="true">{def.name.slice(0, 1)}</span>}
+    </>
+  );
 }
 
 const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [defaultEngine, setDefaultEngine] = useState<EngineKey>(loadDefaultEngine);
+  const [slots] = useState(loadEngineSlots);
+  const [defaultSlot, setDefaultSlot] = useState(() => loadDefaultEngineSlot(slots));
   const { addHistory, handleFocus, handleBlur, handleInput, handleKeyDown } = useSearchHistory(inputRef);
 
   // 合并内部 ref 与外部 forwarded ref
@@ -28,24 +52,24 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
     else if (ref) ref.current = el;
   };
 
-  function doSearch(key: EngineKey, q: string) {
-    localStorage.setItem(DEFAULT_ENGINE_KEY, key);
-    setDefaultEngine(key);
-    addHistory(q, key);
-    window.location.href = engines[key].url(q);
+  function doSearch(def: EngineDef, q: string) {
+    addHistory(q, def.id);
+    window.location.href = searchUrl(def, q);
   }
 
-  function handleEngineClick(key: EngineKey) {
-    if (key === defaultEngine) {
+  function handleEngineClick(i: number) {
+    const def = slots[i];
+    if (!def) return;
+    if (i === defaultSlot) {
       const q = inputRef.current?.value.trim() ?? '';
       if (q) {
-        doSearch(key, q);
+        doSearch(def, q);
       } else {
-        window.location.href = engines[key].home;
+        window.location.href = def.home;
       }
     } else {
-      setDefaultEngine(key);
-      localStorage.setItem(DEFAULT_ENGINE_KEY, key);
+      setDefaultSlot(i);
+      localStorage.setItem(DEFAULT_ENGINE_KEY, String(i));
       inputRef.current?.focus();
     }
   }
@@ -67,18 +91,21 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
             onKeyDown={handleKeyDown}
           />
           <div className="engine-buttons">
-            {ENGINE_ORDER.map(key => {
-              const Icon = ENGINE_ICONS[key];
+            {slots.map((def, i) => {
+              const Icon = BUILTIN_ENGINE_ICONS.has(def.id) ? ENGINE_ICONS[def.id] : undefined;
               return (
                 <button
-                  key={key}
+                  key={i}
                   type="button"
-                  className={`engine-btn${key === defaultEngine ? ' active' : ''}`}
-                  data-engine={key}
-                  title={engines[key].name}
-                  onClick={() => handleEngineClick(key)}
+                  className={`engine-btn${i === defaultSlot ? ' active' : ''}`}
+                  data-engine={def.id}
+                  title={def.name}
+                  aria-label={def.name}
+                  onClick={() => handleEngineClick(i)}
                 >
-                  <Icon />
+                  {Icon
+                    ? <Icon />
+                    : <EngineFavicon def={def} fallbackClass="engine-letter" />}
                 </button>
               );
             })}

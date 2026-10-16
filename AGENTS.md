@@ -61,7 +61,7 @@ start/
     │   ├── media-url.ts    # blob URL probe + data: URL 回退（module-level 强引用）
     │   └── proxy.ts        # 跨域抓取（p.xrl.im/?url=）、favicon 解析、hostname
     ├── hooks/
-    │   ├── useRoute.ts           # 极简 path 路由（usePath/navigateTo：pushState + 手动派发 popstate）
+    │   ├── useRoute.ts           # 极简 path 路由（pushState + 手动派发 popstate；切换包 View Transitions，气泡↔设置卡容器变形）
     │   ├── useSearchHistory.ts   # 非受控 input + ↑/↓/Esc 翻阅
     │   ├── useBackgroundStore.ts # order/files/hash/index 内存 + IDB 持久化 + remove
     │   ├── useBackgroundMedia.ts # crossfade 层栈（BgLayer 声明式 + BgMedia 命令式 reveal + clearBackground）
@@ -102,6 +102,7 @@ start/
 ## 关键实现约束
 
 - React 19 + hooks，输入框**非受控**（ref 直写 value）；状态管理全部自定义 hooks，不使用外部库（**路由也不引库**：`useRoute` 手写 pushState + 手动派发 popstate）。
+- 页面切换动画用原生 **View Transitions**（`startViewTransition` + `flushSync` 包裹路由更新；`#settings-btn` 与 `.settings-panel` 共用 `view-transition-name: settings-entry` 做容器变形），不支持的浏览器瞬时切换；背景层与设置页禁用 `user-select`（图片/视频默认可被拖拽选中出蓝色高亮）。
 - 背景域（store/media/cycle）由 `App.tsx` 常驻持有，`BackgroundLayer` 跨路由不卸载；首页键盘监听随 `HomePage` 挂载/卸载，天然只在首页生效。背景的添加/删除/设为当前只发生在 `/settings`。
 - 冷深链链路：GH Pages 404 → `public/404.html` → `/?spa=<encodeURIComponent(path+search+hash)>` → `main.tsx` `consumeSpaRedirect()` `replaceState` 还原（`URLSearchParams.get` 已解码一次，**勿再 `decodeURIComponent`**；只接受站内绝对路径）。
 - 跨域快捷链接 / favicon 必须通过反代 `https://p.xrl.im/?url=…`。
