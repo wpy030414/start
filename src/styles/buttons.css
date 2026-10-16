@@ -1,0 +1,157 @@
+/* ---------- 11. Help & Settings Buttons ---------- */
+.help-btn {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  z-index: 50;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.03) 100%);
+  backdrop-filter: blur(14px) saturate(170%);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 8px 22px rgba(0, 0, 0, 0.22);
+  padding: 0;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease,
+              border-color 0.25s ease,
+              width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.help-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 45%);
+  transition: opacity 0.25s ease;
+}
+
+.help-btn-icon {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.help-btn-trash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.96);
+  white-space: nowrap;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.help-btn-trash svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.help-btn:hover {
+  transform: scale(1.07) translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.46);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.10) 55%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 10px 28px rgba(0, 0, 0, 0.26),
+    0 0 14px rgba(170, 220, 255, 0.14);
+}
+
+.help-btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+.help-btn:focus {
+  outline: none;
+}
+
+/* 拖拽态：当有 shortcut-item 被拖起时，按钮立即变成垃圾桶 */
+.help-btn.dragging-trash {
+  width: 132px;
+  border-radius: 999px;
+  border-color: rgba(255, 90, 90, 0.55);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 90, 110, 0.50), rgba(180, 40, 60, 0.30) 60%, rgba(120, 20, 40, 0.22) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 190, 0.30),
+    0 10px 28px rgba(140, 20, 40, 0.32),
+    0 0 16px rgba(255, 80, 100, 0.22);
+  cursor: copy;
+}
+
+.help-btn.dragging-trash::before {
+  opacity: 0;
+}
+
+.help-btn.dragging-trash .help-btn-icon {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.help-btn.dragging-trash .help-btn-trash {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 拖拽悬停到垃圾桶上时进一步高亮 */
+.help-btn.drop-target {
+  transform: scale(1.08);
+  border-color: rgba(255, 120, 120, 0.75);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 110, 130, 0.62), rgba(200, 50, 70, 0.38) 60%, rgba(140, 25, 45, 0.28) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 210, 0.38),
+    0 12px 34px rgba(160, 25, 45, 0.38),
+    0 0 20px rgba(255, 90, 110, 0.30);
+}
+
+.help-btn.drop-target .help-btn-icon {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.help-btn.drop-target .help-btn-trash {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.settings-btn {
+  left: 26px;
+  right: auto;
+}

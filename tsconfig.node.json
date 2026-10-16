@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -9,8 +9,7 @@
     "moduleDetection": "force",
     "noEmit": true,
     "strict": true,
-    "skipLibCheck": true,
-    "types": ["node"]
+    "skipLibCheck": true
   },
   "include": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.ts"]
 }
