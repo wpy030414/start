@@ -10,7 +10,9 @@ import {
   type EngineSlotEntry,
 } from '../lib/constants';
 import { loadSlotEntries, saveSlotEntries } from '../lib/engines';
-import { ENGINE_ICON_MAP } from '../components/icons';
+import ConfirmDialog from '../components/ConfirmDialog';
+import CustomEngineDialog from '../components/CustomEngineDialog';
+import EngineSelect from '../components/EngineSelect';
 
 interface SettingsPageProps {
   /** 背景域 state（非 ref）：store 变更驱动网格重渲染。 */
@@ -70,15 +72,6 @@ function BgThumb({ file }: { file: File }) {
   return <img className="bg-thumb" src={url} alt={file.name} onError={() => setFailed(true)} />;
 }
 
-const ENGINE_ICONS = ENGINE_ICON_MAP;
-
-/** 引擎槽位图标：预设用内置 SVG；自定义用首字母徽章。 */
-function EngineSlotIcon({ entry }: { entry: EngineSlotEntry }) {
-  const Icon = entry.id ? ENGINE_ICONS[entry.id] : undefined;
-  if (Icon) return <Icon />;
-  return <span className="engine-letter">{entry.name.slice(0, 1)}</span>;
-}
-
 /**
  * 清除站点全部数据：本地存储 + 背景库（及其他遗留 IndexedDB）+ 外壳缓存 + SW 注册。
  * - 背景库走 clear() 而非 deleteDatabase()：库连接常驻，删除请求会被 blocked 卡住。
@@ -123,6 +116,9 @@ export default function SettingsPage({
 
   // 引擎槽位（本页自治：localStorage 读写；首页 SearchCard 挂载时读盘）
   const [slots, setSlots] = useState<EngineSlotEntry[]>(loadSlotEntries);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  /** 正在填「自定义引擎」的槽位下标；null = 弹窗关闭。 */
+  const [customSlot, setCustomSlot] = useState<number | null>(null);
 
   function selectPreset(i: number, entry: EngineSlotEntry) {
     setSlots(prev => {
@@ -141,15 +137,12 @@ export default function SettingsPage({
     });
   }
 
-  const handleReset = () => {
-    if (!confirm(
-      '确定清除所有数据吗？\n\n'
-      + '将删除：搜索历史、快捷链接、引擎设置、循环设置、全部背景，'
-      + '以及离线缓存与 Service Worker 注册。\n\n'
-      + '此操作不可恢复。',
-    )) return;
+  function wipeAll() {
+    setConfirmOpen(false);
     void wipeAllSiteData().then(() => location.reload());
-  };
+  }
+
+  const editingEntry = customSlot !== null ? slots[customSlot] : undefined;
 
   return (
     <div id="settings-page" className="settings-page">
@@ -167,7 +160,12 @@ export default function SettingsPage({
             ← 返回
           </a>
           <h2>设置</h2>
-          <button type="button" className="setting-reset" id="setting-reset" onClick={handleReset}>
+          <button
+            type="button"
+            className="setting-reset"
+            id="setting-reset"
+            onClick={() => setConfirmOpen(true)}
+          >
             清除所有数据
           </button>
         </div>
@@ -255,44 +253,59 @@ export default function SettingsPage({
             {ENGINE_SLOTS.map((slotDef, i) => {
               const entry = slots[i];
               const isCustom = !entry.id;
-              const def = entry;
               return (
                 <div className="engine-slot" key={i} data-slot={i}>
-                  <span className="engine-slot-icon"><EngineSlotIcon entry={entry} /></span>
-                  <span className="engine-slot-name">{def.name}</span>
-                  {i === 0 && <span className="engine-slot-badge">默认</span>}
-                  <select
-                    className="engine-select"
-                    aria-label={`替换第 ${i + 1} 个搜索引擎`}
-                    value={isCustom ? '__custom__' : def.id}
-                    onChange={e => {
-                      const v = e.target.value;
-                      if (v === '__custom__') {
-                        const name = prompt('搜索引擎名称');
-                        if (!name || !name.trim()) return;
-                        const urlTemplate = prompt('搜索 URL（{q} 为关键词占位）', 'https://example.com/search?q={q}');
-                        if (!urlTemplate || !urlTemplate.trim()) return;
-                        const home = prompt('首页 URL', urlTemplate.replace(/{q}/, ''));
-                        if (!home || !home.trim()) return;
-                        setCustom(i, name.trim(), urlTemplate.trim(), home.trim());
-                      } else {
-                        const preset = slotDef.presets.find(p => p.id === v);
-                        if (!preset) return;
-                        selectPreset(i, { id: preset.id, name: preset.name, urlTemplate: preset.urlTemplate, home: preset.home });
-                      }
-                    }}
-                  >
-                    {slotDef.presets.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                    <option value="__custom__">{isCustom ? `${def.name}（自定义）` : '自定义...'}</option>
-                  </select>
+                  <EngineSelect
+                    options={slotDef.presets}
+                    value={isCustom ? '' : entry.id}
+                    label={isCustom ? `${entry.name}（自定义）` : entry.name}
+                    ariaLabel={`替换第 ${i + 1} 个搜索引擎`}
+                    dataSlot={i}
+                    onSelect={preset => selectPreset(i, {
+                      id: preset.id,
+                      name: preset.name,
+                      urlTemplate: preset.urlTemplate,
+                      home: preset.home,
+                    })}
+                    onCustom={() => setCustomSlot(i)}
+                  />
                 </div>
               );
             })}
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="清除所有数据"
+        message={
+          '确定清除所有数据吗？\n\n'
+          + '将删除：搜索历史、快捷链接、引擎设置、循环设置、全部背景，'
+          + '以及离线缓存与 Service Worker 注册。\n\n'
+          + '此操作不可恢复。'
+        }
+        confirmLabel="清除"
+        danger
+        confirmId="confirm-wipe"
+        onConfirm={wipeAll}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      <CustomEngineDialog
+        open={customSlot !== null}
+        initial={
+          editingEntry && !editingEntry.id
+            ? { name: editingEntry.name, urlTemplate: editingEntry.urlTemplate, home: editingEntry.home }
+            : { name: '', urlTemplate: '', home: '' }
+        }
+        onCancel={() => setCustomSlot(null)}
+        onSubmit={values => {
+          if (customSlot === null) return;
+          setCustom(customSlot, values.name, values.urlTemplate, values.home);
+          setCustomSlot(null);
+        }}
+      />
     </div>
   );
 }

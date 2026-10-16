@@ -56,7 +56,7 @@ test.describe('毛玻璃在构建产物中存活', () => {
       )
       .toMatch(/open/);
     await expectGlass(page, '#shortcuts-modal');
-    await expectGlass(page, '.shortcuts-panel');
+    await expectGlass(page, '.modal-panel');
     await expectGlass(page, '.shortcuts-form input');
   });
 
@@ -64,5 +64,17 @@ test.describe('毛玻璃在构建产物中存活', () => {
     await page.goto('/settings');
     await expect(page.locator('.settings-panel')).toBeVisible();
     await expectGlass(page, '.settings-panel');
+  });
+
+  test('设置页确认弹窗与引擎下拉面板', async ({ page }) => {
+    await page.goto('/settings');
+    await page.click('#setting-reset');
+    await expect(page.locator('#confirm-wipe')).toBeVisible();
+    await expectGlass(page, '.modal-panel');
+    await page.click('#confirm-dialog-cancel');
+
+    await page.click('.engine-slot[data-slot="0"] .engine-trigger');
+    await expect(page.locator('.engine-menu[data-slot="0"]')).toHaveClass(/open/);
+    await expectGlass(page, '.engine-menu');
   });
 });

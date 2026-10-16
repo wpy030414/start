@@ -113,8 +113,9 @@ test.describe('设置页', () => {
       };
     });
 
-    page.on('dialog', d => d.accept());
     await page.click('#setting-reset');
+    await expect(page.locator('#confirm-wipe')).toBeVisible();
+    await page.click('#confirm-wipe');
     await page.waitForTimeout(2500); // reload 落地
 
     // 关键回归点：navigateFallback 依赖的 index.html 已随缓存删掉，
@@ -145,12 +146,20 @@ test.describe('设置页', () => {
   test('清除所有数据 dismiss：不做任何清除', async ({ page }) => {
     await page.goto('/settings');
     await setSlider(page.locator('#cycle-mode'), '0'); // 制造一个可被"保留"验证的状态
-    page.on('dialog', d => d.dismiss());
     await page.click('#setting-reset');
-    await page.waitForTimeout(500);
-    // 未 reload、仍在设置页，设置未被清除
+    await expect(page.locator('#confirm-dialog-cancel')).toBeVisible();
+    await page.click('#confirm-dialog-cancel');
+    // 弹窗关闭、未 reload、仍在设置页，设置未被清除
+    await expect(page.locator('.modal-mask.open')).toHaveCount(0);
     await expect(page).toHaveURL(/\/settings$/);
     await expect(page.locator('#setting-reset')).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('bg_cycle_mode'))).toBe('6');
+
+    // Escape 同样只关弹窗、不清数据
+    await page.click('#setting-reset');
+    await expect(page.locator('#confirm-wipe')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.modal-mask.open')).toHaveCount(0);
     expect(await page.evaluate(() => localStorage.getItem('bg_cycle_mode'))).toBe('6');
   });
 });

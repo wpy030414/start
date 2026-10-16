@@ -3,15 +3,20 @@
   position: fixed;
   inset: 0;
   z-index: 40;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow: hidden; /* 页面本身不滚动：溢出一律交给面板内部 */
   user-select: none;
   -webkit-user-select: none;
 }
 
 .settings-panel {
-  width: min(680px, calc(100vw - 32px));
-  margin: clamp(24px, 6vh, 64px) auto 56px;
+  width: min(680px, 100%);
+  max-height: 100%;
+  overflow-y: auto; /* 内容过多时面板内部滚动，而非整页滚动 */
+  -webkit-overflow-scrolling: touch;
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background:
@@ -26,6 +31,24 @@
   user-select: none;
   -webkit-user-select: none;
   view-transition-name: settings-entry; /* 与 #settings-btn 配对：气泡 ↔ 卡容器变形 */
+}
+
+/* 面板内部滚动条：细、半透明，贴合玻璃调性 */
+.settings-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-panel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.settings-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.settings-panel::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .settings-header {
@@ -302,93 +325,312 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* ---------- 16. 搜索引擎槽位 ---------- */
+/* ---------- 16. 搜索引擎槽位（三个主题化下拉） ---------- */
 .engine-slots {
   display: flex;
-  flex-direction: column;
   gap: 8px;
 }
 
 .engine-slot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.engine-slot-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.engine-slot-icon svg,
-.engine-favicon {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-
-.engine-favicon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.engine-letter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.engine-slot-name {
   flex: 1;
+  min-width: 0; /* 等宽三等分；允许收缩，长引擎名走省略号 */
+}
+
+/* 窄屏下三列会把引擎名挤成省略号，退回竖排 */
+@media (max-width: 560px) {
+  .engine-slots {
+    flex-direction: column;
+  }
+}
+
+.engine-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.engine-trigger:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.engine-trigger:focus-visible {
+  outline: none;
+  border-color: rgba(170, 220, 255, 0.75);
+  box-shadow: 0 0 0 2px rgba(170, 220, 255, 0.22);
+}
+
+.engine-trigger-label {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
-.engine-slot-badge {
+.engine-caret {
   flex: 0 0 auto;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(170, 220, 255, 0.45);
-  background: rgba(170, 220, 255, 0.18);
-  color: rgba(220, 238, 255, 0.95);
-  font-size: 11px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid rgba(255, 255, 255, 0.70);
+  transition: transform 0.22s ease;
 }
 
-.engine-select {
-  flex: 0 0 auto;
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 10px;
+.engine-trigger[aria-expanded="true"] .engine-caret {
+  transform: rotate(180deg);
+}
+
+.engine-menu {
+  /* fixed + portal 到 body：脱离 .settings-panel 的 backdrop root，模糊才能取到页面壁纸 */
+  position: fixed;
+  z-index: 90;
+  padding: 6px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 12px;
-  cursor: pointer;
-  outline: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.10) 100%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.30) inset;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top center;
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0.22s;
 }
 
-.engine-select option {
-  color: #222;
-  background: #fff;
+.engine-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0s;
 }
+
+.engine-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.engine-option-custom {
+  color: var(--text-dim);
+}
+
+.engine-option.selected {
+  color: rgba(220, 238, 255, 0.98);
+  background: rgba(170, 220, 255, 0.18);
+}
+
+.engine-option:hover,
+.engine-option.active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- 17. 主题化弹窗（替代原生 confirm / prompt） ---------- */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100; /* 高于 .settings-page 40 / .help-btn 50 / .help-popover 60 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(28px) saturate(180%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.28s ease, visibility 0s linear 0.28s;
+}
+
+.modal-mask.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.28s ease, visibility 0s linear 0s;
+}
+
+.modal-panel {
+  position: relative;
+  width: min(400px, 92vw);
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 20px 22px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.10) 100%);
+  backdrop-filter: blur(40px) saturate(200%);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.45) inset;
+  color: rgba(255, 255, 255, 0.95);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.32s cubic-bezier(0.23, 1, 0.32, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+}
+
+.modal-mask.open .modal-panel {
+  transform: translateY(0) scale(1);
+}
+
+/* 面板顶部高光罩（沿用原快捷链接弹窗的做法），内容压在它之上 */
+.modal-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 45%);
+  opacity: 0.6;
+}
+
+.modal-panel > * {
+  position: relative;
+  z-index: 2;
+}
+
+.modal-title {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.modal-message {
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+  white-space: pre-line; /* 保留消息里的换行分段 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.modal-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.modal-field > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.modal-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.modal-input:focus {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.modal-error {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: rgba(255, 160, 170, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modal-btn {
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.modal-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.modal-btn:focus-visible {
+  outline: none;
+  border-color: rgba(170, 220, 255, 0.75);
+  box-shadow: 0 0 0 2px rgba(170, 220, 255, 0.22);
+}
+
+.modal-btn-primary {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.10) 60%);
+}
+
+.modal-btn-primary:hover {
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.14) 60%);
+}
+
+/* 危险操作确认：沿用 .setting-reset 的红色玻璃 */
+.modal-btn-primary.danger {
+  border-color: rgba(255, 90, 90, 0.50);
+  background: radial-gradient(circle at 30% 25%, rgba(255, 90, 110, 0.42), rgba(180, 40, 60, 0.26) 60%);
+}
+
+.modal-btn-primary.danger:hover {
+  background: radial-gradient(circle at 30% 25%, rgba(255, 100, 120, 0.52), rgba(200, 50, 70, 0.32) 60%);
+}
+
