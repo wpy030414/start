@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Shortcut } from '../hooks/useShortcuts';
 import { getFaviconUrl, getHostname } from '../lib/proxy';
+import GlassBackdrop from './GlassBackdrop';
 
 const ITEM_W = 66;
 const NEAR_PUSH = ITEM_W * 0.5;
@@ -46,6 +47,7 @@ export function ShortcutItem({
       onMouseEnter={onMouseEnter}
       onClick={e => { if (isDraggingSource) e.preventDefault(); }}
     >
+      <GlassBackdrop className="shortcut-item-bg" radius={13} refraction={12} />
       <img
         className="shortcut-icon"
         src={imgSrc}

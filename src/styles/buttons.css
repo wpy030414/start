@@ -1,137 +1,168 @@
-/* ---------- 11. Help & Settings Buttons ---------- */
-.help-btn {
+/* ---------- 11. 角标按钮：左上「+」/ 右上「设置」 ---------- */
+/* 帮助入口已移除。两颗角标共用同一套玻璃外观（`.corner-btn`），都由
+   @glass-sdk/liquid-glass 的材质层绘制，无 WebGPU 时退回这里手写的 backdrop-filter。
+   左上角的 + 兼作拖拽删除落点：拖起快捷链接时它就地变形成红色垃圾桶胶囊。 */
+
+.corner-btn {
   position: fixed;
-  right: 26px;
-  bottom: 26px;
   z-index: 50;
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.30);
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.03) 100%);
-  backdrop-filter: blur(14px) saturate(170%);
-  color: rgba(255, 255, 255, 0.92);
-  font-family: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    0 8px 22px rgba(0, 0, 0, 0.22);
-  padding: 0;
   overflow: hidden;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.94);
+  /* 手写玻璃：无 WebGPU 时的降级外观，webgpu 模式下由 glass.css 清掉 */
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 5px 14px rgba(0, 0, 0, 0.14);
   transform: translateZ(0);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.25s ease,
               box-shadow 0.25s ease,
-              border-color 0.25s ease,
-              width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-  -webkit-user-select: none;
+              border-color 0.25s ease;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-.help-btn::before {
+/* 顶部高光（叠在材质层之上，与搜索卡的 ::after 同一手法） */
+.corner-btn::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  z-index: 1;
+  border-radius: inherit;
   pointer-events: none;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 45%);
-  transition: opacity 0.25s ease;
 }
 
-.help-btn-icon {
+.corner-btn-icon {
   position: relative;
   z-index: 2;
-  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.help-btn-trash {
+.corner-btn:hover {
+  transform: scale(1.07) translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.46);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 7px 20px rgba(0, 0, 0, 0.18),
+    0 0 12px rgba(255, 255, 255, 0.06);
+}
+
+.corner-btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+}
+
+.corner-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 3px;
+}
+
+/* 位置：+ 在左上，设置在右上 */
+.add-btn {
+  top: 24px;
+  left: 24px;
+}
+
+.settings-btn {
+  top: 24px;
+  right: 24px;
+}
+
+/* 齿轮：hover 转一下（+ 不转 —— 45° 会读成关闭符号） */
+.settings-btn:hover .corner-btn-icon {
+  transform: rotate(45deg);
+}
+
+.add-btn:hover .corner-btn-icon {
+  transform: scale(1.12);
+}
+
+/* 容器变形：齿轮 ↔ 设置卡（与 .settings-panel 同名配对，动画见 settings-page.css） */
+#settings-btn {
+  view-transition-name: settings-entry;
+}
+
+/* ---------- 拖拽态：+ 就地变成红色垃圾桶胶囊 ---------- */
+.add-btn .add-btn-trash {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 12px;
+  gap: 7px;
+  padding: 0 16px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
   color: rgba(255, 255, 255, 0.96);
   white-space: nowrap;
   opacity: 0;
-  transform: scale(0.7);
-  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(0.8);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.help-btn-trash svg {
+.add-btn .add-btn-trash svg {
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
 }
 
-.help-btn:hover {
-  transform: scale(1.07) translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.46);
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.10) 55%, rgba(255, 255, 255, 0.05) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 10px 28px rgba(0, 0, 0, 0.26),
-    0 0 14px rgba(170, 220, 255, 0.14);
-}
-
-.help-btn:active {
-  transform: scale(0.96);
-  transition-duration: 0.08s;
-}
-
-.help-btn:focus {
-  outline: none;
-}
-
-/* 拖拽态：当有 shortcut-item 被拖起时，按钮立即变成垃圾桶 */
-.help-btn.dragging-trash {
+.add-btn.dragging-trash {
   width: 132px;
   border-radius: 999px;
   border-color: rgba(255, 90, 90, 0.55);
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 90, 110, 0.50), rgba(180, 40, 60, 0.30) 60%, rgba(120, 20, 40, 0.22) 100%);
+  backdrop-filter: blur(14px) saturate(170%);
   box-shadow:
     inset 0 1px 0 rgba(255, 180, 190, 0.30),
     0 10px 28px rgba(140, 20, 40, 0.32),
     0 0 16px rgba(255, 80, 100, 0.22);
   cursor: copy;
+  transform: none;
 }
 
-.help-btn.dragging-trash::before {
+.add-btn.dragging-trash::before {
   opacity: 0;
 }
 
-.help-btn.dragging-trash .help-btn-icon {
+.add-btn.dragging-trash .corner-btn-icon {
   opacity: 0;
   transform: scale(0.6);
 }
 
-.help-btn.dragging-trash .help-btn-trash {
+.add-btn.dragging-trash .add-btn-trash {
   opacity: 1;
   transform: scale(1);
 }
 
-/* 拖拽悬停到垃圾桶上时进一步高亮 */
-.help-btn.drop-target {
-  transform: scale(1.08);
-  border-color: rgba(255, 120, 120, 0.75);
+/* 拖到垃圾桶上：进一步放大 + 高亮 */
+.add-btn.drop-target {
+  transform: scale(1.06);
+  border-color: rgba(255, 120, 120, 0.78);
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 110, 130, 0.62), rgba(200, 50, 70, 0.38) 60%, rgba(140, 25, 45, 0.28) 100%);
   box-shadow:
@@ -140,27 +171,21 @@
     0 0 20px rgba(255, 90, 110, 0.30);
 }
 
-.help-btn.drop-target .help-btn-icon {
-  opacity: 0;
-  transform: scale(0.6);
-}
-
-.help-btn.drop-target .help-btn-trash {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.settings-btn {
-  left: 26px;
-  right: auto;
-}
-
-/* 齿轮现在是 <a>：去掉默认下划线与颜色 */
-a.help-btn {
-  text-decoration: none;
-}
-
-/* 容器变形：齿轮气泡 ↔ 设置卡（与 .settings-panel 同名配对，动画见 settings-page.css） */
-#settings-btn {
-  view-transition-name: settings-entry;
+/* ---------- 移动端：贴边收紧 ---------- */
+@media (max-width: 540px) {
+  .corner-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .add-btn {
+    top: 16px;
+    left: 16px;
+  }
+  .settings-btn {
+    top: 16px;
+    right: 16px;
+  }
+  .add-btn.dragging-trash {
+    width: 124px;
+  }
 }

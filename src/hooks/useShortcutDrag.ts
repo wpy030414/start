@@ -7,8 +7,8 @@ interface DragState {
 }
 
 /**
- * HTML5 拖拽状态机：dragIndex 驱动视觉（body 类、垃圾桶形态、源项塌陷、hover 抑制），
- * proxy 状态控制 Portal 挂载，suppressClick 抑制拖拽后的误触。
+ * HTML5 拖拽状态机：dragIndex 驱动视觉（body 类、删除胶囊浮出、源项塌陷），
+ * proxy 状态控制 Portal 挂载。
  */
 export function useShortcutDrag({
   onRemove,
@@ -21,7 +21,6 @@ export function useShortcutDrag({
   const [proxy, setProxy] = useState<DragState | null>(null);
   const proxyRef = useRef<HTMLDivElement | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
-  const suppressUntilRef = useRef(0);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLAnchorElement>, index: number) => {
     e.dataTransfer.setData('text/plain', String(index));
@@ -39,9 +38,6 @@ export function useShortcutDrag({
     if (!proxyRef.current) return;
     proxyRef.current.style.transform = `translate3d(${e.clientX - offsetRef.current.x}px, ${e.clientY - offsetRef.current.y}px, 0) scale(1.14)`;
   }, []);
-
-  // 拖拽结束后 1s 内忽略 click（抑制误触帮助按钮）
-  const shouldSuppressClick = useCallback(() => Date.now() < suppressUntilRef.current, []);
 
   // drop 或 dragend 都会结束；flyBack 时播放飞回动画
   const finishDrag = useCallback((flyBack: boolean, dropIndex?: number) => {
@@ -103,14 +99,12 @@ export function useShortcutDrag({
       setDragIndex(null);
       setProxy(null);
     }
-
-    suppressUntilRef.current = Date.now() + 1000;
   }, [onRemove, maxIndex]);
 
   const handleDragEnd = useCallback(() => finishDrag(true), [finishDrag]);
   const handleDrop = useCallback((index: number) => finishDrag(false, index), [finishDrag]);
 
   return {
-    dragIndex, proxy, proxyRef, handleDragStart, handleDragEnd, handleDocumentDragOver, handleDrop, shouldSuppressClick,
+    dragIndex, proxy, proxyRef, handleDragStart, handleDragEnd, handleDocumentDragOver, handleDrop,
   };
 }

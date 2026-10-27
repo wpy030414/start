@@ -56,7 +56,7 @@
 - **决策**：方案 3——原生 View Transitions，`#settings-btn` 与 `.settings-panel` 共享 `view-transition-name: settings-entry` 做容器变形动画；不支持的浏览器降级为瞬时切换。
 - **为什么选这个**：
   - 零依赖，API 极其简洁（包裹 `flushSync` 即可）。
-  - 容器变形动画（齿轮气泡 ↔ 设置卡片）语义精准，CSS transition 很难等效做到。
+  - 容器变形动画（右上角齿轮 ↔ 设置卡片）语义精准，CSS transition 很难等效做到。
   - 降级路径明确：`typeof startViewTransition === 'function'` 检测，不支持则直接 `update()`。
 - **为什么不选其他**：
   - 方案 1：容器变形动画需要精确的 `getBoundingClientRect` + FLIP 计算，代码量大且容易出错。

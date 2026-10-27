@@ -1,0 +1,7 @@
+# pnpm 12 的依赖构建审批（v11 起取代 onlyBuiltDependencies / ignoredBuiltDependencies）。
+# 这两个包只在 Node 侧用原生 WebGPU 适配器时才需要编译；本项目的玻璃渲染跑在浏览器里，
+# 构建产物不含它们。显式拒绝后 `pnpm install --frozen-lockfile` 不再因
+# ERR_PNPM_IGNORED_BUILDS 退出 1（CI 的部署流水线会卡在那一步）。
+allowBuilds:
+  '@vgpu/adapter-node': false
+  webgpu: false

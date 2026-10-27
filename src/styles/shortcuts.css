@@ -65,6 +65,13 @@
   z-index: 1;
 }
 
+/* 材质层（Liquid Glass）铺在内容之下 */
+.shortcut-item > .shortcut-icon,
+.shortcut-item > .shortcut-title {
+  position: relative;
+  z-index: 2;
+}
+
 /* hover 项自身：放大 + z-index 最高 */
 .shortcut-item:hover {
   opacity: 1;
@@ -186,7 +193,7 @@ body.is-dragging-shortcut .shortcut-item:not(.shortcut-proxy):not(.dragging-sour
 #shortcuts-showcase {
   position: fixed;
   left: 50%;
-  bottom: calc(33.333vh - 60px);
+  bottom: calc(30vh - 60px);
   transform: translateX(-50%);
   z-index: 10;
   width: min(560px, 94vw);

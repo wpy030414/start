@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GlassContent, GlassScene } from '@glass-sdk/liquid-glass';
+import '@glass-sdk/liquid-glass/styles.css';
 import BackgroundLayer from './components/BackgroundLayer';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
@@ -7,6 +9,7 @@ import { useBackgroundStore } from './hooks/useBackgroundStore';
 import { useBackgroundMedia } from './hooks/useBackgroundMedia';
 import { useBgCycle } from './hooks/useBgCycle';
 import { loadCycleMode, saveCycleMode } from './lib/settings';
+import { initGlassMode } from './lib/glass-mode';
 import { type CycleMode } from './lib/constants';
 
 import './styles/base.css';
@@ -14,13 +17,20 @@ import './styles/background.css';
 import './styles/search.css';
 import './styles/shortcuts.css';
 import './styles/buttons.css';
-import './styles/popovers.css';
 import './styles/settings-page.css';
+import './styles/glass.css';
 
 /** 路由壳 + 背景域 owner：BackgroundLayer 常驻（跨路由背景零闪烁），
- *  cycle 设置为 React 状态（/settings 上实时生效）。 */
+ *  cycle 设置为 React 状态（/settings 上实时生效）。
+ *
+ *  整页包在 GlassScene 里：库靠 SVG 折射滤镜「过滤内容层」来画玻璃，所以背景媒体必须
+ *  是场景的 GlassContent（折射源），玻璃只挂在它上面的搜索框（详见 styles/glass.css）。
+ *  就绪信号 → html[data-glass] 决定用真玻璃还是回退 CSS 玻璃（见 lib/glass-mode）。 */
 export default function App() {
   const path = usePath();
+  const sceneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => initGlassMode(sceneRef.current), []);
 
   const bgStore = useBackgroundStore();
   const bgMedia = useBackgroundMedia();
@@ -95,8 +105,15 @@ export default function App() {
   const isDefault = bgStateRef.current.loaded && !currentFile && layers.length === 0;
 
   return (
-    <>
-      <BackgroundLayer layers={layers} isDefault={isDefault} onSettled={handleSettled} videoRefCb={videoRefCb} />
+    <GlassScene
+      ref={sceneRef}
+      className="glass-scene"
+      material="regular"
+      appearance="light"
+    >
+      <GlassContent className="glass-content">
+        <BackgroundLayer layers={layers} isDefault={isDefault} onSettled={handleSettled} videoRefCb={videoRefCb} />
+      </GlassContent>
       {path === '/settings' ? (
         <SettingsPage
           bgState={bgState}
@@ -114,6 +131,6 @@ export default function App() {
           applyBackground={applyBackground}
         />
       )}
-    </>
+    </GlassScene>
   );
 }

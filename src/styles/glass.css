@@ -1,0 +1,52 @@
+/* ---------- 18. Liquid Glass（搜索区 + 角标 + 快捷链接） ---------- */
+/* 视觉玻璃由 @glass-sdk/liquid-glass 绘制：内容层被 SVG 折射滤镜过滤，材质图由 WebGPU 生成。
+   接材质层的：搜索卡 1 + 引擎按钮 3 + 右上角设置 1 + 左上角 + 1 + 每颗快捷链接 1（最多 6）——
+   其余玻璃面（面板 / 弹窗 / 拖拽代理 / + 变身垃圾桶时）保持原有 backdrop-filter 实现：
+   surface 越多，整页内容被反复过滤的次数越多，所以这两个「临时态」不接玻璃。
+   两个模式锚点（由 lib/glass-mode.ts 写入 html[data-glass]）：
+     webgpu —— 库已就绪，真玻璃接管，这几处的手写玻璃退场；
+     css    —— 无 WebGPU 适配器 / 滤镜图超限，完全沿用原 backdrop-filter 实现。
+   `.lg-*` 系列规则都写在 :where() 里（零特异性），所以下面的类选择器天然覆盖它。 */
+
+.glass-scene {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  /* 库用它给 surface 内的文字定色；本项目整体是深底白字 */
+  --lg-foreground: var(--text);
+}
+
+/* 折射源：背景媒体层。Safari 下透明源像素会让原件从折射缺口漏出，故给不透明底 */
+.glass-content {
+  background: #000;
+}
+
+/* 材质层：铺满父级矩形、不吃指针事件，只承载库里画出来的那块玻璃 */
+.glass-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------- 真玻璃接管：这几处的手写玻璃退场 ---------- */
+/* 只清掉 background / 边框 / 阴影 / 模糊 —— 一旦留着 backdrop-filter，就会在折射层上
+   再糊一层模糊。`::before`（扫光 / 锥形高光 / 顶部高光）与 `::after`（顶部高光、当前引擎小圆点）保留，
+   它们叠在玻璃之上没有问题。 */
+html[data-glass="webgpu"] .search-card-bg,
+html[data-glass="webgpu"] .engine-btn,
+html[data-glass="webgpu"] .shortcut-item,
+html[data-glass="webgpu"] .corner-btn:not(.dragging-trash) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  /* 只写标准属性：值相同的 `-webkit-backdrop-filter: none` 成对出现时会被构建管线
+     折叠成只剩前缀版，Chromium 反而不认，模糊会残留在折射层上。 */
+  backdrop-filter: none;
+}
+
+/* 拖拽态例外：`+` 变成红色垃圾桶胶囊时红色实心比玻璃更醒目，材质层让位给手写背景
+   （所以上面用 :not(.dragging-trash) 放行，红色 / 高亮两套背景都在 buttons.css 里）。 */
+html[data-glass="webgpu"] .add-btn.dragging-trash .corner-btn-bg {
+  visibility: hidden;
+}

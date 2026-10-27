@@ -3,6 +3,7 @@ import { DEFAULT_ENGINE_KEY, searchUrl, type EngineDef } from '../lib/constants'
 import { loadDefaultEngineSlot, loadSlotEntries, toEngineDef } from '../lib/engines';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 import { ENGINE_ICON_MAP } from './icons';
+import GlassBackdrop from './GlassBackdrop';
 
 /** 显示引擎图标：预设走内置 SVG；自定义引擎用首字母徽章。 */
 function SlotIcon({ def }: { def: EngineDef }) {
@@ -61,7 +62,7 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
     <section id="top-third">
       <div className="search-shell" id="search-shell">
         <div className="search-card" id="search-card">
-          <div className="search-card-bg" />
+          <GlassBackdrop className="search-card-bg" radius="capsule" refraction={32} />
           <input
             ref={setRefs}
             type="text"
@@ -88,6 +89,7 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
                   aria-label={def.name}
                   onClick={() => handleEngineClick(i)}
                 >
+                  <GlassBackdrop radius="circle" refraction={14} />
                   <SlotIcon def={def} />
                 </button>
               );

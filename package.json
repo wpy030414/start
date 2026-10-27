@@ -1,7 +1,7 @@
 {
   "name": "start",
   "private": true,
-  "version": "26.10.16",
+  "version": "26.10.27",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@glass-sdk/liquid-glass": "~0.0.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

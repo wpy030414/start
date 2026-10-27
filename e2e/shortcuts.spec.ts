@@ -1,30 +1,23 @@
 import { expect, test } from '@playwright/test';
 
 async function openModal(page: import('@playwright/test').Page) {
-  // webkit 上 goto 后立即派发时 React 的 body 监听器可能尚未挂载，
-  // 用 poll 重试派发直到模态打开（chromium 一次即中，webkit 最多重试几次）。
-  await expect.poll(async () => {
-    await page.evaluate(() =>
-      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }))
-    );
-    return await page.locator('#shortcuts-modal').getAttribute('class');
-  }, { timeout: 5000 }).toMatch(/open/);
+  // 添加入口是左上角 + 按钮（`+` 按键已下线）
+  await page.click('#add-shortcut-btn');
+  await expect(page.locator('#shortcuts-modal')).toHaveClass(/open/);
 }
 
 test.describe('快捷链接', () => {
-  test('按 + 打开模态，Esc 关闭', async ({ page }) => {
+  test('点左上角 + 打开模态，Esc 关闭', async ({ page }) => {
     await page.goto('/');
     await openModal(page);
     await page.keyboard.press('Escape');
     await expect(page.locator('#shortcuts-modal')).not.toHaveClass(/open/);
   });
 
-  test('输入框聚焦时 + 不打开模态', async ({ page }) => {
+  test('点遮罩关闭模态', async ({ page }) => {
     await page.goto('/');
-    await page.locator('#search-input').click();
-    await page.evaluate(() =>
-      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }))
-    );
+    await openModal(page);
+    await page.mouse.click(30, 300);
     await expect(page.locator('#shortcuts-modal')).not.toHaveClass(/open/);
   });
 

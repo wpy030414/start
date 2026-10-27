@@ -30,7 +30,7 @@
   padding: 20px 22px 22px;
   user-select: none;
   -webkit-user-select: none;
-  view-transition-name: settings-entry; /* 与 #settings-btn 配对：气泡 ↔ 卡容器变形 */
+  view-transition-name: settings-entry; /* 与右上角 #settings-btn 配对：齿轮 ↔ 面板容器变形 */
 }
 
 /* 面板内部滚动条：细、半透明，贴合玻璃调性 */
@@ -459,7 +459,7 @@
 .modal-mask {
   position: fixed;
   inset: 0;
-  z-index: 100; /* 高于 .settings-page 40 / .help-btn 50 / .help-popover 60 */
+  z-index: 100; /* 高于 .settings-page 40 / .settings-btn 50 / .trash-target 50 */
   display: flex;
   align-items: center;
   justify-content: center;

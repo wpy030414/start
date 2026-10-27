@@ -12,6 +12,7 @@
 - **vite-plugin-pwa** 2.0 生成 Service Worker（`sw.js`），`navigateFallback` + `cleanupOutdatedCaches`。
 - 构建产物 `dist/` → GitHub Actions 自动部署到 GitHub Pages。
 - `public/worker.js` 是旧 SW 墓碑（自注销，用于迁移期驱逐旧 SW）。
+- 玻璃有两套实现：搜索卡 + 引擎按钮 + 两颗角标（左上 `+` / 右上设置）+ 每颗快捷链接由 **`@glass-sdk/liquid-glass`** 绘制真液态玻璃（WebGPU + SVG 折射滤镜），无 WebGPU 时自动回退到手写 `backdrop-filter`；其余玻璃面（面板 / 弹窗 / 拖拽代理 / `+` 变身垃圾桶时）始终是手写实现。
 
 ---
 
@@ -26,6 +27,7 @@ start/
 ├── tsconfig.node.json      # vite.config / playwright.config / e2e 类型检查
 ├── package.json
 ├── pnpm-lock.yaml
+├── pnpm-workspace.yaml     # allowBuilds：显式拒绝 webgpu/@vgpu 的原生编译脚本（否则 install 退出 1）
 ├── .gitignore
 ├── AGENTS.md
 ├── .github/workflows/
@@ -43,43 +45,44 @@ start/
     ├── App.tsx             # 路由壳 + 背景域 owner（store/media/cycle 常驻，BackgroundLayer 全局）
     ├── sw-migrate.ts       # 注销 /worker.js 并清理旧缓存/IDB
     ├── pages/
-    │   ├── HomePage.tsx    # 首页：搜索/快捷链接/帮助/键盘 ←→Enter+'+Esc/拖拽
+    │   ├── HomePage.tsx    # 首页：搜索/快捷链接/键盘 ←→Enter+Esc/拖拽删除
     │   └── SettingsPage.tsx# /settings：背景管理网格 + 循环设置 + 标题行「清除所有数据」（BgThumb 自管 URL）
     ├── styles/             # 全局 CSS 按功能模块拆分（选择器零改动）
     │   ├── base.css        # 变量 + reset + html,body
     │   ├── background.css  # #bg-layer + 暗角伪元素 + default-bg/default-dot
     │   ├── search.css      # top-third + search-shell/card + engine-btn + 移动端
     │   ├── shortcuts.css   # modal + shortcut-item + proxy + showcase
-    │   ├── buttons.css     # help-btn/settings-btn + 垃圾桶/drop-target 变体
-    │   ├── popovers.css    # help-popover
-    │   └── settings-page.css # 设置页布局 + settings/toggle/slider/reset
+    │   ├── buttons.css     # corner-btn（左上 + / 右上齿轮）+ 拖拽态：+ 变红色垃圾桶胶囊
+    │   ├── settings-page.css # 设置页布局 + settings/toggle/slider/reset
+    │   └── glass.css       # Liquid Glass 场景/材质层 + html[data-glass] 双模式切换
     ├── lib/
     │   ├── constants.ts    # engines 表、localStorage key、MAX_*、周期上下限
     │   ├── settings.ts     # localStorage 设置读写（bool/int 钳制）
     │   ├── bg-hash.ts      # FNV-1a base32 文件哈希
     │   ├── db.ts           # IndexedDB 背景存储（Safari 序列化 + 事务纪律）
     │   ├── media-url.ts    # blob URL probe + data: URL 回退（module-level 强引用）
-    │   └── proxy.ts        # 跨域抓取（p.xrl.im/?url=）、favicon 解析、hostname
+    │   ├── proxy.ts        # 跨域抓取（p.xrl.im/?url=）、favicon 解析、hostname
+    │   └── glass-mode.ts   # html[data-glass] 双模式判定（webgpu ↔ css 回退）
     ├── hooks/
-    │   ├── useRoute.ts           # 极简 path 路由（pushState + 手动派发 popstate；切换包 View Transitions，气泡↔设置卡容器变形）
+    │   ├── useRoute.ts           # 极简 path 路由（pushState + 手动派发 popstate；切换包 View Transitions，齿轮↔设置卡容器变形）
     │   ├── useSearchHistory.ts   # 非受控 input + ↑/↓ 翻阅 + Enter 提交（输入法守卫）
     │   ├── useBackgroundStore.ts # order/files/hash/index 内存 + IDB 持久化 + remove
     │   ├── useBackgroundMedia.ts # crossfade 层栈（BgLayer 声明式 + BgMedia 命令式 reveal + clearBackground）
     │   ├── useBgCycle.ts         # effect 依赖驱动排程（图片 setTimeout / 视频 ended）
     │   ├── useShortcuts.ts       # localStorage 增删 + 代理抓取元数据
     │   ├── useShortcutDrag.ts    # HTML5 拖拽状态机（proxy/飞回/click 抑制）
-    │   └── usePopover.ts         # 气泡 open + 外点/Esc
+    │   └── usePopover.ts         # 弹层 open + 外点/Esc（设置页的引擎下拉在用）
     └── components/
         ├── icons.tsx              # 3 引擎 SVG + 齿轮/垃圾桶 SVG
         ├── BackgroundLayer.tsx    # #bg-layer 容器 + DefaultDots + BgMedia 层
-        ├── SearchCard.tsx         # 非受控 input + 引擎按钮语义
+        ├── SearchCard.tsx         # 非受控 input + 引擎按钮语义 + 搜索区玻璃材质层
+        ├── GlassBackdrop.tsx      # 玻璃「材质层」（GlassSurface 包装：绝对铺满、不吃事件）
         ├── ShortcutsShowcase.tsx  # dock 容器（hoverIndex state）
         ├── ShortcutItem.tsx       # 单个 draggable <a>，--tx/--sc pure fn
         ├── ShortcutsModal.tsx     # 添加表单
         ├── ShortcutDragProxy.tsx  # createPortal(document.body) 拖拽代理
-        ├── HelpButton.tsx         # 右下 ?（含垃圾桶形态，class 由 prop 驱动）
-        ├── HelpPopover.tsx
-        └── SettingsButton.tsx     # 左下齿轮 <a href="/settings">，左键拦截为 pushState
+        ├── AddShortcutButton.tsx  # 左上 +（唯一添加入口）；拖拽时就地变成删除落点
+        └── SettingsButton.tsx     # 右上齿轮 <a href="/settings"> + GlassBackdrop，左键拦截为 pushState
 ```
 
 ---
@@ -92,10 +95,9 @@ start/
 2. **搜索历史**：`↑` / `↓` 浏览（↑ 首按落在**最新**一条、连续 ↑ 向旧推进；↓ 反向回退，已在最新一条时再按 ↓ 退出翻阅并复原原文 —— 队列首尾不相连）、`Esc` 复位，去重后最多 100 条。存 `search_history`（`{q, engine, time}[]`）。
 3. **自定义背景**：在设置页 `/settings` 添加图片 / 视频（支持多选），立即应用并交叉溶解；列表支持「设为当前」（置顶）与「删除单个」（删当前自动切到剩余项，删空回默认波点底）。
 4. **背景历史**：最近 12 个，首页 `←` / `→` 浏览、`Enter` 置顶，持久化在 IndexedDB。
-5. **设置页 `/settings`**：左下角齿轮进入（真链接 + pushState 拦截）。含背景管理与「背景循环」档位（6s / 30s / 不循环，实时生效）；标题行右侧「清除所有数据」清除站点全部数据——localStorage、IndexedDB 背景库、Cache Storage 与 SW 注册，随后整页重载（等同全新访客）。
-6. **快捷链接**：按 `+` 添加（自动抓标题与 favicon），最多 6 个，dock 风格悬停（hoverIndex state 驱动 --tx/--sc），拖拽删除。
-7. **帮助气泡**：右下角 `?` 按钮，弹出功能说明（不含背景添加说明），点外 / `Esc` 关闭。
-8. **离线可用**：VitePWA `navigateFallback` + workbox precache，等效 stale-while-revalidate；冷深链 `/settings` 由 `public/404.html` 兜底（`/?spa=<encoded>` → `main.tsx` 渲染前 `replaceState` 还原）。
+5. **设置页 `/settings`**：右上角齿轮进入（真链接 + pushState 拦截，Liquid Glass 玻璃面）。含背景管理与「背景循环」档位（6s / 30s / 不循环，实时生效）；标题行右侧「清除所有数据」清除站点全部数据——localStorage、IndexedDB 背景库、Cache Storage 与 SW 注册，随后整页重载（等同全新访客）。
+6. **快捷链接**：左上角 `+` 按钮添加（自动抓标题与 favicon），最多 6 个，dock 风格悬停（hoverIndex state 驱动 --tx/--sc）；拖起后 `+` 就地变形成红色垃圾桶胶囊，拖上去松手即删除（`+` 键已下线）。
+7. **离线可用**：VitePWA `navigateFallback` + workbox precache，等效 stale-while-revalidate；冷深链 `/settings` 由 `public/404.html` 兜底（`/?spa=<encoded>` → `main.tsx` 渲染前 `replaceState` 还原）。
 
 ---
 
@@ -113,4 +115,9 @@ start/
 - 引擎按钮 / 快捷链接图标统一 `filter: brightness(0) invert(1)` 反白；展示区（`#shortcuts-showcase`）的图标保持原色。
 - Public `worker.js` 是墓碑：install → skipWaiting，activate → 清缓存 + `self.registration.unregister()`，与 `sw-migrate.ts` 双保险确保旧 SW 被清退。
 - 构建用 `pnpm`，`pnpm typecheck && vite build`；部署文件放在 `public/`，CNAME 随构建产物到 `dist/`。
+- **Liquid Glass（`@glass-sdk/liquid-glass`）铺在固定元素上**：`GlassScene` 包住整页、背景媒体放在 `GlassContent`（它是折射源），材质层 = 搜索卡（`capsule`）+ 三颗引擎按钮（`circle`）+ 左上 `+` / 右上设置（`capsule` / `circle`）+ 每颗快捷链接（`radius={13}`，最多 6 颗），即 6～12 颗 `GlassSurface`。库是把 SVG 折射滤镜挂在**内容层**上再按每个 surface 的矩形取样的，surface 越多、整页内容被反复过滤的次数越多，所以面板 / 弹窗 / 拖拽代理 / `+` 变身垃圾桶时一律不接（它们继续用手写 `backdrop-filter`）；同尺寸的引擎按钮与快捷链接共用同一份缓存的材质图。
+- 模式由库的就绪信号决定，写进 `html[data-glass]`（`lib/glass-mode.ts`）：先按 `css` 渲染（首帧绝不空白）→ 场景出现 surface 且 `data-glass-ready="true"` 才切 `webgpu`；`glass:diagnostic` 带 `error`（无 WebGPU 适配器 / 滤镜图超限）则永久回退 `css`。切到 `webgpu` 时 `glass.css` 会清掉这几处元素的 `background`/`border`/`box-shadow`/`backdrop-filter`（否则会在折射层上再糊一层模糊），伪元素的高光与扫光保留。
+- 没有 surface 时库也把 `data-glass-ready` 报成 `"true"`（0 个全部就绪），所以升级必须以「场景里有 `.lg-surface`」为前置条件，否则从 `/settings` 直接进首页会撤掉手写玻璃留下一个看不见的搜索框。
+- 材质层是**子层**而非父级本身：父级带着 hover/focus 的 transform、dock 磁吸、垃圾桶变形、`view-transition-name` 等交互语义，拆出 `.glass-backdrop`（`position:absolute; inset:0; pointer-events:none`）后原有 DOM 与 CSS 零改动，材质只换「谁来画」。
+- `pnpm-workspace.yaml` 的 `allowBuilds` 显式拒绝 `webgpu` / `@vgpu/adapter-node` 的原生编译脚本（只在 Node 侧用原生适配器才需要）；漏了这一步 `pnpm install --frozen-lockfile` 会以 `ERR_PNPM_IGNORED_BUILDS` 退出 1，CI 部署直接断。
 - Git commit 遵循 Conventional Commits，commit type/scope 用英文，描述用简体中文。
