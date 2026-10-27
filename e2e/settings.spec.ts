@@ -3,6 +3,7 @@ import { addOneBg } from './helpers/bg';
 
 function setSlider(el: import('@playwright/test').Locator, value: string) {
   return el.evaluate((node: HTMLInputElement, v: string) => {
+    // oxlint-disable-next-line typescript/unbound-method -- React 受控 input 必须用原型上的原生 setter 才能触发 onChange
     const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     native.call(node, v);
     node.dispatchEvent(new Event('input', { bubbles: true }));
@@ -91,17 +92,19 @@ test.describe('设置页', () => {
     // 先确认确有东西可清：SW 注册已 activated 且 workbox 预缓存已建立。
     // 刻意不依赖 navigator.serviceWorker.controller —— WebKit 下若在 SW 激活前
     // 就导航到 /settings，新文档不会被接管，controller 会一直为 null（浏览器时序特性）。
-    await expect.poll(
-      () => page.evaluate(async () => {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        return regs.some(r => r.active?.state === 'activated');
-      }),
-      { timeout: 15000 },
-    ).toBe(true);
-    await expect.poll(
-      () => page.evaluate(() => caches.keys().then(k => k.length)),
-      { timeout: 15000 },
-    ).toBeGreaterThan(0);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(async () => {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            return regs.some((r) => r.active?.state === 'activated');
+          }),
+        { timeout: 15000 },
+      )
+      .toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => caches.keys().then((k) => k.length)), { timeout: 15000 })
+      .toBeGreaterThan(0);
 
     // 重载文档「零点」快照：早于应用脚本与 SW 重新注册，避开竞态
     await page.addInitScript(() => {
@@ -109,7 +112,7 @@ test.describe('设置页', () => {
       w.__wipeProbe = {
         lsKeys: Object.keys(localStorage),
         cacheKeys: caches.keys(),
-        swCount: navigator.serviceWorker.getRegistrations().then(r => r.length),
+        swCount: navigator.serviceWorker.getRegistrations().then((r) => r.length),
       };
     });
 

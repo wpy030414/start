@@ -3,7 +3,7 @@ import { addBgViaSettings } from './helpers/bg';
 
 function readOrder(page: Page): Promise<string[]> {
   return page.evaluate(() => {
-    return new Promise<string[]>(res => {
+    return new Promise<string[]>((res) => {
       const r = indexedDB.open('start', 1);
       r.onsuccess = () => {
         const db = r.result;

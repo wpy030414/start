@@ -33,10 +33,10 @@
 /* 只清掉 background / 边框 / 阴影 / 模糊 —— 一旦留着 backdrop-filter，就会在折射层上
    再糊一层模糊。`::before`（扫光 / 锥形高光 / 顶部高光）与 `::after`（顶部高光、当前引擎小圆点）保留，
    它们叠在玻璃之上没有问题。 */
-html[data-glass="webgpu"] .search-card-bg,
-html[data-glass="webgpu"] .engine-btn,
-html[data-glass="webgpu"] .shortcut-item,
-html[data-glass="webgpu"] .corner-btn:not(.dragging-trash) {
+html[data-glass='webgpu'] .search-card-bg,
+html[data-glass='webgpu'] .engine-btn,
+html[data-glass='webgpu'] .shortcut-item,
+html[data-glass='webgpu'] .corner-btn:not(.dragging-trash) {
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -47,6 +47,6 @@ html[data-glass="webgpu"] .corner-btn:not(.dragging-trash) {
 
 /* 拖拽态例外：`+` 变成红色垃圾桶胶囊时红色实心比玻璃更醒目，材质层让位给手写背景
    （所以上面用 :not(.dragging-trash) 放行，红色 / 高亮两套背景都在 buttons.css 里）。 */
-html[data-glass="webgpu"] .add-btn.dragging-trash .corner-btn-bg {
+html[data-glass='webgpu'] .add-btn.dragging-trash .corner-btn-bg {
   visibility: hidden;
 }

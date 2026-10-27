@@ -11,7 +11,7 @@ export interface Shortcut {
 function loadShortcuts(): Shortcut[] {
   try {
     const raw = localStorage.getItem(SHORTCUTS_KEY);
-    const arr = raw ? (JSON.parse(raw) || []) : [];
+    const arr = raw ? JSON.parse(raw) || [] : [];
     return arr.slice(0, MAX_SHORTCUTS);
   } catch {
     return [];
@@ -37,7 +37,7 @@ export function useShortcuts() {
       title = fetched.title;
       if (fetched.favicon) favicon = fetched.favicon;
     }
-    setShortcuts(prev => {
+    setShortcuts((prev) => {
       const next = [{ url, title: title || '', favicon }, ...prev];
       if (next.length > MAX_SHORTCUTS) next.length = MAX_SHORTCUTS;
       save(next);
@@ -46,7 +46,7 @@ export function useShortcuts() {
   }, []);
 
   const removeShortcut = useCallback((index: number) => {
-    setShortcuts(prev => {
+    setShortcuts((prev) => {
       const next = [...prev];
       next.splice(index, 1);
       save(next);

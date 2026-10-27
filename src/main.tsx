@@ -11,7 +11,11 @@ function consumeSpaRedirect(): void {
   let target = spa;
   // 只接受站内绝对路径；拒绝协议相对 // 与 /\（防外站跳转/抛 SecurityError）
   if (!target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) target = '/';
-  try { history.replaceState(null, '', target); } catch { /* 非法则留在 / */ }
+  try {
+    history.replaceState(null, '', target);
+  } catch {
+    /* 非法则留在 / */
+  }
 }
 
 consumeSpaRedirect();

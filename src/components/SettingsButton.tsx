@@ -16,7 +16,7 @@ export default function SettingsButton() {
       href="/settings"
       title="设置"
       aria-label="设置"
-      onClick={e => {
+      onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         e.preventDefault();
         navigateTo('/settings');

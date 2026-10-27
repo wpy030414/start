@@ -16,7 +16,8 @@ export default defineConfig({
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
-    command: 'pnpm build && pnpm preview --port 4173 --strictPort',
+    // 端口与 strictPort 由 vite.config.ts 的 preview 段决定，这里不重复传参
+    command: 'pnpm build && pnpm preview',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,

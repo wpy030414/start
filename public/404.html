@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <title>开始</title>
-  <script>
-    /* GitHub Pages 无 SPA 回退：未知路径（如 /settings）会命中本 404 页。
-     * 重定向到首页并携带原始路径，由应用入口（main.tsx）还原真实路径。
-     * encodeURIComponent 保证 & 与 # 不破坏查询串；location.replace 不留多余历史。 */
-    (function () {
-      var l = window.location;
-      l.replace('/?spa=' + encodeURIComponent(l.pathname + l.search + l.hash));
-    })();
-  </script>
-</head>
-<body></body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>开始</title>
+    <script>
+      /* GitHub Pages 无 SPA 回退：未知路径（如 /settings）会命中本 404 页。
+       * 重定向到首页并携带原始路径，由应用入口（main.tsx）还原真实路径。
+       * encodeURIComponent 保证 & 与 # 不破坏查询串；location.replace 不留多余历史。 */
+      (function () {
+        var l = window.location;
+        l.replace('/?spa=' + encodeURIComponent(l.pathname + l.search + l.hash));
+      })();
+    </script>
+  </head>
+  <body></body>
 </html>

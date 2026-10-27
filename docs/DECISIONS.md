@@ -106,3 +106,25 @@
   - 下线预设时需保留陈旧 id 的兜底逻辑（否则持久化的 id 会找不到对应引擎）。
   - 图标不再从网络加载，新增引擎需同时添加 SVG 组件。
 - **何时重新审视**：需要新增引擎预设时，只需添加 `presets` 项和对应的 SVG 图标。
+## ADR-6：构建 / 检查统一到 vp（Vite+），base 由 CI 注入
+
+- **日期**：2026 Q4
+- **状态**：已采纳
+- **背景**：项目此前直接用 `vite` CLI：`build` 里串 `tsc --noEmit`，类型检查拆成 `tsconfig.json` + `tsconfig.node.json` 两份，`base` 在 `vite.config.ts` 里写死 `'/'`；同时缺少 lint / 格式化的统一入口，代码风格靠约定维持。项目形态是单包纯前端 SPA + GitHub Pages，正对应 node-page 路线。
+- **考虑过的方案**：
+  1. 保持 `vite` + 自拼 `tsc` / eslint / prettier
+  2. vp（vite-plus）统一 dev / build / preview / check，单 tsconfig
+  3. 升级到全栈 monorepo
+- **决策**：方案 2——`package.json` 的脚本全部转成 `vp dev/build/preview/check`，`vite.config.ts` 从 `vite-plus` 导入 `defineConfig`，`base = process.env.PAGES_BASE_PATH || '/'`；tsconfig 收敛为单份；CI 用 `voidzero-dev/setup-vp`（Node 版本读 `.nvmrc`），构建时注入 `PAGES_BASE_PATH`。
+- **为什么选这个**：
+  - 一条 `vp check` 同时覆盖 oxfmt 格式、oxlint、类型检查，CI 与本地是同一份标准。
+  - `base` 只由环境变量决定，项目页 / 自定义域切换不需要改代码；本站自定义域只需把仓库变量设为 `/`。
+  - 单 tsconfig 消除两份配置漂移（`e2e/` 与配置文件此前靠第二份 tsconfig 才能被检查）。
+- **为什么不选其他**：
+  - 方案 1：三个工具三套配置，格式与 lint 长期靠人眼；`tsc` 与构建分两步，容易「构建过了但类型没过」。
+  - 方案 3：没有服务端需求，monorepo 只是纯开销。
+- **后果**：
+  - `public/worker.js` 这类原样托管的文件会被格式化器当 JS 解析——发现它此前误写了 TS 断言（浏览器解析即失败、墓碑静默失效），已改成纯 JS。
+  - 插件（`@vitejs/plugin-react` / `vite-plugin-pwa`）的类型来自真实 vite，与 vp 期望的 core 类型身份不同，在 `vite.config.ts` 边界处做了一次类型桥接并注释原因。
+  - 首次 `vp check --fix` 会按 120 列重排源码，产生一次性格式 diff；`**/*.md` 被 `fmt.ignorePatterns` 排除，中文表格不受影响。
+- **何时重新审视**：需要后端 / 数据库 / SSE 时，`src/` 可整体平移到 monorepo 的 `apps/web/`，`base` 改回 `'/'`。

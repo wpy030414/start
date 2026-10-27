@@ -41,8 +41,13 @@ const SearchCard = forwardRef<HTMLInputElement>(function SearchCard(_, ref) {
   }
 
   const {
-    addHistory, handleFocus, handleBlur, handleInput, handleKeyDown,
-    handleCompositionStart, handleCompositionEnd,
+    addHistory,
+    handleFocus,
+    handleBlur,
+    handleInput,
+    handleKeyDown,
+    handleCompositionStart,
+    handleCompositionEnd,
   } = useSearchHistory(inputRef, submit);
 
   function handleEngineClick(i: number) {

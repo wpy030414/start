@@ -9,11 +9,14 @@ import { getFaviconUrl, getHostname } from '../lib/proxy';
  * `proxyRef.current` 是否存在作为「拖拽仍在进行」的判据，ref 没挂上就会一律提前返回
  * （代理不动、松手不删、也没有飞回动画）。
  */
-const ShortcutDragProxy = forwardRef<HTMLDivElement, {
-  item: Shortcut | null;
-  x: number;
-  y: number;
-}>(function ShortcutDragProxy({ item, x, y }, ref) {
+const ShortcutDragProxy = forwardRef<
+  HTMLDivElement,
+  {
+    item: Shortcut | null;
+    x: number;
+    y: number;
+  }
+>(function ShortcutDragProxy({ item, x, y }, ref) {
   if (!item) return null;
 
   const imgSrc = item.favicon || getFaviconUrl(item.url);

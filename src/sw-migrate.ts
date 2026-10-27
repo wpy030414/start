@@ -19,9 +19,7 @@ export async function migrateLegacySW(): Promise<void> {
   // 2. 清理旧缓存
   const keys = await caches.keys();
   await Promise.all(
-    keys
-      .filter(k => LEGACY_CACHE_PREFIXES.some(p => k.startsWith(p)))
-      .map(k => caches.delete(k)),
+    keys.filter((k) => LEGACY_CACHE_PREFIXES.some((p) => k.startsWith(p))).map((k) => caches.delete(k)),
   );
 
   // 3. 删除旧 SW 元数据 IndexedDB

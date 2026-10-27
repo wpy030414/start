@@ -15,32 +15,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-vp 一并处理 Node、包管理器和依赖安装；
+      # Node 版本读 .nvmrc（与本地 nvm/fnm 同一份），不要再写 setup-node / pnpm install
+      - uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          node-version-file: .nvmrc
+          cache: true
+
+      - name: Check
+        run: vp check
+
+      # base 只在这里注入，代码里不做推断：
+      #   项目页：变量未设置 → 默认 /<repo>/
+      #   自定义域（start.xrl.im）/ 用户页：把仓库变量 PAGES_BASE_PATH 设为 /
+      - name: Build
+        run: vp build
+        env:
+          PAGES_BASE_PATH: /
+
+      - name: Disable Jekyll
+        run: touch dist/.nojekyll
+
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+          # v4+ 默认排除点文件；不加这行 .nojekyll 进不了 artifact
+          include-hidden-files: true
+
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 12
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
-
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

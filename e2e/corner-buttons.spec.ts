@@ -47,10 +47,13 @@ test.describe('首页角标', () => {
   test('拖动快捷链接：代理跟随光标 → + 变垃圾桶 → 松手即删除', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://a.com', title: 'A', favicon: '' },
-        { url: 'https://b.com', title: 'B', favicon: '' },
-      ]))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify([
+          { url: 'https://a.com', title: 'A', favicon: '' },
+          { url: 'https://b.com', title: 'B', favicon: '' },
+        ]),
+      ),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(2);
@@ -65,7 +68,7 @@ test.describe('首页角标', () => {
     await page.mouse.down();
     await page.mouse.move(ib.x + 60, ib.y + 60, { steps: 5 });
     await expect(addBtn).toHaveClass(/dragging-trash/);
-    const proxyTx = () => page.locator('.shortcut-proxy').evaluate(el => (el as HTMLElement).style.transform);
+    const proxyTx = () => page.locator('.shortcut-proxy').evaluate((el) => (el as HTMLElement).style.transform);
     const t0 = await proxyTx();
     await page.mouse.move(400, 300, { steps: 12 });
     expect(await proxyTx(), '拖拽代理必须跟随光标').not.toBe(t0);
@@ -85,10 +88,13 @@ test.describe('首页角标', () => {
   test('拖到别处松手：不删除，且完全退出拖拽态', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://a.com', title: 'A', favicon: '' },
-        { url: 'https://b.com', title: 'B', favicon: '' },
-      ]))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify([
+          { url: 'https://a.com', title: 'A', favicon: '' },
+          { url: 'https://b.com', title: 'B', favicon: '' },
+        ]),
+      ),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(2);

@@ -67,7 +67,7 @@ export default function CustomEngineDialog({
     <div
       className={`modal-mask${open ? ' open' : ''}`}
       aria-hidden={!open}
-      onClick={e => {
+      onClick={(e) => {
         if (e.target === e.currentTarget) cancelRef.current();
       }}
     >
@@ -76,12 +76,14 @@ export default function CustomEngineDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        onSubmit={e => {
+        onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
       >
-        <h3 className="modal-title" id={titleId}>自定义搜索引擎</h3>
+        <h3 className="modal-title" id={titleId}>
+          自定义搜索引擎
+        </h3>
         <label className="modal-field">
           <span>名称</span>
           <input
@@ -92,7 +94,7 @@ export default function CustomEngineDialog({
             autoComplete="off"
             placeholder="例如：知乎"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
           />
         </label>
         <label className="modal-field">
@@ -104,7 +106,7 @@ export default function CustomEngineDialog({
             autoComplete="off"
             placeholder="https://example.com/search?q={q}"
             value={urlTemplate}
-            onChange={e => setUrlTemplate(e.target.value)}
+            onChange={(e) => setUrlTemplate(e.target.value)}
           />
         </label>
         <label className="modal-field">
@@ -116,17 +118,16 @@ export default function CustomEngineDialog({
             autoComplete="off"
             placeholder="https://example.com/"
             value={home}
-            onChange={e => setHome(e.target.value)}
+            onChange={(e) => setHome(e.target.value)}
           />
         </label>
-        {error && <p className="modal-error" id="custom-engine-error">{error}</p>}
+        {error && (
+          <p className="modal-error" id="custom-engine-error">
+            {error}
+          </p>
+        )}
         <div className="modal-actions">
-          <button
-            type="button"
-            className="modal-btn"
-            id="custom-engine-cancel"
-            onClick={() => cancelRef.current()}
-          >
+          <button type="button" className="modal-btn" id="custom-engine-cancel" onClick={() => cancelRef.current()}>
             取消
           </button>
           <button type="submit" className="modal-btn modal-btn-primary" id="custom-engine-confirm">

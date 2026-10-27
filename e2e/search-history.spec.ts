@@ -9,8 +9,8 @@ test.describe('搜索历史', () => {
           { q: 'newest', engine: 'qianwen', time: 3 },
           { q: 'middle', engine: 'bing', time: 2 },
           { q: 'oldest', engine: 'bing', time: 1 },
-        ])
-      )
+        ]),
+      ),
     );
     await page.goto('/');
     const input = page.locator('#search-input');
@@ -43,8 +43,8 @@ test.describe('搜索历史', () => {
         JSON.stringify([
           { q: 'a', engine: 'qianwen', time: 2 },
           { q: 'b', engine: 'qianwen', time: 1 },
-        ])
-      )
+        ]),
+      ),
     );
     await page.goto('/');
     const input = page.locator('#search-input');
@@ -58,10 +58,7 @@ test.describe('搜索历史', () => {
 
   test('Esc 复位并失焦', async ({ page }) => {
     await page.addInitScript(() =>
-      localStorage.setItem(
-        'search_history',
-        JSON.stringify([{ q: 'abc', engine: 'qianwen', time: 1 }])
-      )
+      localStorage.setItem('search_history', JSON.stringify([{ q: 'abc', engine: 'qianwen', time: 1 }])),
     );
     await page.goto('/');
     const input = page.locator('#search-input');

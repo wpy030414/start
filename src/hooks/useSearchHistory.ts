@@ -17,7 +17,7 @@ const COMPOSITION_GRACE_MS = 100;
 function loadHistory(): HistoryEntry[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? (JSON.parse(raw) || []) : [];
+    return raw ? JSON.parse(raw) || [] : [];
   } catch {
     return [];
   }
@@ -54,7 +54,7 @@ export function useSearchHistory(inputRef: RefObject<HTMLInputElement | null>, o
   const compositionEndAtRef = useRef(-Infinity);
 
   function addHistory(q: string, engine: string) {
-    const h = historyRef.current.filter(item => item.q !== q);
+    const h = historyRef.current.filter((item) => item.q !== q);
     h.unshift({ q, engine, time: Date.now() });
     historyRef.current = h.length > MAX_HISTORY ? h.slice(0, MAX_HISTORY) : h;
     localStorage.setItem(HISTORY_KEY, JSON.stringify(historyRef.current));

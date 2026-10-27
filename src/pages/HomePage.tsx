@@ -34,9 +34,8 @@ export default function HomePage({ bgStateRef, navigateBg, promoteCurrent, apply
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [dropHover, setDropHover] = useState(false);
 
-  const {
-    dragIndex, proxy, proxyRef, handleDragStart, handleDragEnd, handleDocumentDragOver, handleDrop,
-  } = useShortcutDrag({ onRemove: removeShortcut, maxIndex: shortcuts.length - 1 });
+  const { dragIndex, proxy, proxyRef, handleDragStart, handleDragEnd, handleDocumentDragOver, handleDrop } =
+    useShortcutDrag({ onRemove: removeShortcut, maxIndex: shortcuts.length - 1 });
 
   // 全局键盘（用 state 驱动模态开关，而不是 DOM classList）
   useEffect(() => {
@@ -95,10 +94,14 @@ export default function HomePage({ bgStateRef, navigateBg, promoteCurrent, apply
   useEffect(() => {
     const btn = addBtnRef.current;
     if (!btn || dragIndex == null) return;
-    const onOver = (e: DragEvent) => { e.preventDefault(); setDropHover(true); };
+    const onOver = (e: DragEvent) => {
+      e.preventDefault();
+      setDropHover(true);
+    };
     const onLeave = () => setDropHover(false);
     const onDp = (e: DragEvent) => {
-      e.preventDefault(); setDropHover(false);
+      e.preventDefault();
+      setDropHover(false);
       const idx = Number(e.dataTransfer?.getData('text/plain'));
       // 收尾交给随后的 dragend：这里只负责「删哪一个」，避免一次拖拽结束两次
       if (Number.isFinite(idx) && idx >= 0 && idx < shortcuts.length) handleDrop(idx);

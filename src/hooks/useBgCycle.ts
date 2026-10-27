@@ -47,10 +47,13 @@ export function useBgCycle({
       return () => v.removeEventListener('ended', onEnded);
     }
 
-    const t = setTimeout(() => {
-      if (modeRef.current === 'off') return;
-      onAdvance();
-    }, Number(mode) * 1000);
+    const t = setTimeout(
+      () => {
+        if (modeRef.current === 'off') return;
+        onAdvance();
+      },
+      Number(mode) * 1000,
+    );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateRef.current.currentHash, stateRef.current.currentIndex, stateRef.current.order.length, mode]);

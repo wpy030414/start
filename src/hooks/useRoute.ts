@@ -13,9 +13,11 @@ import { flushSync } from 'react-dom';
 /** 以 View Transition 包裹路由状态更新（flushSync 保证回调返回前 DOM 已提交）。 */
 function applyPathUpdate(update: () => void): void {
   // 不假设 lib.dom 已含 View Transitions 类型，防御式取用
-  const startVT = (document as unknown as {
-    startViewTransition?: (callback: () => void) => unknown;
-  }).startViewTransition;
+  const startVT = (
+    document as unknown as {
+      startViewTransition?: (callback: () => void) => unknown;
+    }
+  ).startViewTransition;
   if (typeof startVT === 'function') {
     startVT.call(document, () => flushSync(update));
   } else {

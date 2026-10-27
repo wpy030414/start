@@ -9,8 +9,12 @@ test.describe('三引擎搜索', () => {
   });
 
   test('点击当前引擎且有输入 → 以该引擎搜索', async ({ page }) => {
-    await page.route('https://www.bing.com/**', route =>
-      route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>bing</body></html>' })
+    await page.route('https://www.bing.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><body>bing</body></html>',
+      }),
     );
     await page.addInitScript(() => localStorage.setItem('default_engine', 'bing'));
     await page.goto('/');
@@ -22,8 +26,12 @@ test.describe('三引擎搜索', () => {
   });
 
   test('点击当前引擎且输入为空 → 进入该引擎首页', async ({ page }) => {
-    await page.route('https://tongyi.aliyun.com/**', route =>
-      route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>qianwen</body></html>' })
+    await page.route('https://tongyi.aliyun.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><body>qianwen</body></html>',
+      }),
     );
     await page.goto('/');
     await page.click('.engine-btn[data-engine="qianwen"]');

@@ -37,7 +37,7 @@ function computeDots(w: number, h: number): Dot[] {
 function BgMedia({
   layer,
   onSettled,
-  videoRefCb
+  videoRefCb,
 }: {
   layer: BgLayer;
   onSettled: (key: string) => void;
@@ -75,8 +75,8 @@ function BgMedia({
     // 缓存命中时 load 事件可能在监听器挂载前完成，双保险检查
     if (el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0) reveal();
     if (el instanceof HTMLVideoElement && el.readyState >= 2) reveal();
-    const t1 = setTimeout(reveal, 800);   // 兜底 reveal
-    const t2 = setTimeout(settle, 3500);  // 兜底 cleanup（transitionend 可能不触发）
+    const t1 = setTimeout(reveal, 800); // 兜底 reveal
+    const t2 = setTimeout(settle, 3500); // 兜底 cleanup（transitionend 可能不触发）
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -88,7 +88,7 @@ function BgMedia({
   if (layer.kind === 'video') {
     return (
       <video
-        ref={el => {
+        ref={(el) => {
           localRef.current = el;
           videoRefCb(layer.key, el);
           return () => {
@@ -107,7 +107,7 @@ function BgMedia({
   }
   return (
     <img
-      ref={el => {
+      ref={(el) => {
         localRef.current = el;
         return () => {
           localRef.current = null;
@@ -126,7 +126,7 @@ export default function BackgroundLayer({
   layers,
   isDefault,
   onSettled,
-  videoRefCb
+  videoRefCb,
 }: {
   layers: BgLayer[];
   isDefault: boolean;
@@ -135,7 +135,7 @@ export default function BackgroundLayer({
 }) {
   const [viewport, setViewport] = useState(() => ({
     w: window.innerWidth,
-    h: window.innerHeight
+    h: window.innerHeight,
   }));
 
   // 默认背景在窗口尺寸变化时防抖重绘（与原实现 200ms 一致）
@@ -157,22 +157,15 @@ export default function BackgroundLayer({
   // 每次重绘随机选色（含 resize 重绘，与原实现一致）
   const color = useMemo(
     () => DEFAULT_DOT_PALETTE[Math.floor(Math.random() * DEFAULT_DOT_PALETTE.length)],
-    [viewport.w, viewport.h]
+    [viewport.w, viewport.h],
   );
-  const dots = useMemo(
-    () => (isDefault ? computeDots(viewport.w, viewport.h) : []),
-    [isDefault, viewport]
-  );
+  const dots = useMemo(() => (isDefault ? computeDots(viewport.w, viewport.h) : []), [isDefault, viewport]);
 
   return (
     <div
       id="bg-layer"
       className={isDefault ? 'default-bg' : undefined}
-      style={
-        isDefault
-          ? ({ background: '#333333', '--dot-color': color } as CSSProperties)
-          : undefined
-      }
+      style={isDefault ? ({ background: '#333333', '--dot-color': color } as CSSProperties) : undefined}
     >
       {dots.map((d, i) => (
         <div
@@ -181,7 +174,7 @@ export default function BackgroundLayer({
           style={{ left: `${d.x}px`, top: `${d.y}px`, '--mul': d.mul.toFixed(3) } as CSSProperties}
         />
       ))}
-      {layers.map(l => (
+      {layers.map((l) => (
         <BgMedia key={l.key} layer={l} onSettled={onSettled} videoRefCb={videoRefCb} />
       ))}
     </div>

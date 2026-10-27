@@ -3,5 +3,14 @@ dist/
 test-results/
 playwright-report/
 .last-build/
+.cache/
+.vite/
 *.local
+*.log
 .DS_Store
+Thumbs.db
+.env
+.env.local
+
+# 本地 agent 记忆（工作区笔记，不入库）
+.workbuddy/

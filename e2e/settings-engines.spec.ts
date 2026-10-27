@@ -12,18 +12,55 @@ test.describe('设置页搜索引擎', () => {
     await expect(page.locator('.engine-slot[data-slot="0"] .engine-trigger-label')).toHaveText('ChatGPT');
     await expect(page.locator('.engine-menu[data-slot="0"]')).not.toHaveClass(/open/);
     expect(await page.evaluate(() => localStorage.getItem('engines'))).toBe(
-      JSON.stringify([{ id: 'chatgpt', name: 'ChatGPT', urlTemplate: 'https://chatgpt.com/?q={q}', home: 'https://chatgpt.com/' }, { id: 'bing', name: '必应', urlTemplate: 'https://www.bing.com/search?q={q}', home: 'https://www.bing.com/' }, { id: 'bilibili', name: '哔哩哔哩', urlTemplate: 'https://search.bilibili.com/all?keyword={q}', home: 'https://www.bilibili.com/' }])
+      JSON.stringify([
+        {
+          id: 'chatgpt',
+          name: 'ChatGPT',
+          urlTemplate: 'https://chatgpt.com/?q={q}',
+          home: 'https://chatgpt.com/',
+        },
+        {
+          id: 'bing',
+          name: '必应',
+          urlTemplate: 'https://www.bing.com/search?q={q}',
+          home: 'https://www.bing.com/',
+        },
+        {
+          id: 'bilibili',
+          name: '哔哩哔哩',
+          urlTemplate: 'https://search.bilibili.com/all?keyword={q}',
+          home: 'https://www.bilibili.com/',
+        },
+      ]),
     );
   });
 
   test('已下线的豆包预设：陈旧 id 回退到槽位默认，而非降级成自定义引擎', async ({ page }) => {
     // 模拟老用户 storage：槽位 0 停在下线前的 doubao
     await page.addInitScript(() =>
-      localStorage.setItem('engines', JSON.stringify([
-        { id: 'doubao', name: '豆包', urlTemplate: 'https://www.doubao.com/chat/?query={q}', home: 'https://www.doubao.com/chat/' },
-        { id: 'google', name: '谷歌', urlTemplate: 'https://www.google.com/search?q={q}', home: 'https://www.google.com/' },
-        { id: 'pixiv', name: 'pixiv', urlTemplate: 'https://www.pixiv.net/tags/{q}/artworks', home: 'https://www.pixiv.net/' },
-      ]))
+      localStorage.setItem(
+        'engines',
+        JSON.stringify([
+          {
+            id: 'doubao',
+            name: '豆包',
+            urlTemplate: 'https://www.doubao.com/chat/?query={q}',
+            home: 'https://www.doubao.com/chat/',
+          },
+          {
+            id: 'google',
+            name: '谷歌',
+            urlTemplate: 'https://www.google.com/search?q={q}',
+            home: 'https://www.google.com/',
+          },
+          {
+            id: 'pixiv',
+            name: 'pixiv',
+            urlTemplate: 'https://www.pixiv.net/tags/{q}/artworks',
+            home: 'https://www.pixiv.net/',
+          },
+        ]),
+      ),
     );
     await page.goto('/');
 
@@ -45,8 +82,12 @@ test.describe('设置页搜索引擎', () => {
 
   test('首页使用替换后的引擎', async ({ page }) => {
     // 堵住所有网络导航防止离开页面
-    await page.route('https://www.google.com/search**', r =>
-      r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>google</body></html>' })
+    await page.route('https://www.google.com/search**', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><body>google</body></html>',
+      }),
     );
     // 槽位 1 需先成为默认引擎，点一次才会发起搜索（非默认引擎的首次点击仅切换）
     await page.addInitScript(() => localStorage.setItem('default_engine', '1'));
@@ -65,8 +106,8 @@ test.describe('设置页搜索引擎', () => {
   });
 
   test('自定义引擎：设置页表单创建 → 首页首字母徽章 + 搜索编码', async ({ page }) => {
-    await page.route('https://x.com/search**', r =>
-      r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>x</body></html>' })
+    await page.route('https://x.com/search**', (r) =>
+      r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>x</body></html>' }),
     );
     await page.goto('/settings');
 

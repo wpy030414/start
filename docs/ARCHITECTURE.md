@@ -2,7 +2,7 @@
 
 ## 系统概述
 
-一个部署在 GitHub Pages 上的 React 19 单页应用，由 Vite 8 构建，vite-plugin-pwa 生成 Service Worker。整体结构分三层：**路由壳（App）→ 页面（HomePage / SettingsPage）→ 领域 hooks + 组件**。
+一个部署在 GitHub Pages 上的 React 19 单页应用，由 Vite 8（经 vite-plus / vp 驱动）构建，vite-plugin-pwa 生成 Service Worker。整体结构分三层：**路由壳（App）→ 页面（HomePage / SettingsPage）→ 领域 hooks + 组件**。
 
 ```
 浏览器
@@ -108,7 +108,7 @@ useBgCycle effect（依赖 mode / currentIndex / order）
 
 | 外部系统 | 用途 |
 |----------|------|
-| GitHub Pages + GitHub Actions | 静态托管 + CI/CD（push main → build → deploy） |
+| GitHub Pages + GitHub Actions | 静态托管 + CI/CD（push main → `vp check` → `vp build` → deploy） |
 | `p.xrl.im` 反代 | 跨域抓取快捷链接标题 / favicon |
 | 千问 / 必应 / 哔哩哔哩等搜索引擎 | 搜索跳转目标 |
 | VitePWA (workbox) | Service Worker 生成与 precache |
@@ -125,3 +125,19 @@ useBgCycle effect（依赖 mode / currentIndex / order）
 - **Service Worker**：`public/worker.js` 是墓碑（自注销），`sw-migrate.ts` 双保险清退旧 SW。当前 SW 由 vite-plugin-pwa 生成。
 - **反白图标**：引擎按钮 / 快捷链接图标统一 `filter: brightness(0) invert(1)`；展示区图标保持原色。
 - **冷深链**：`URLSearchParams.get` 已解码一次，不再 `decodeURIComponent`；只接受站内绝对路径。
+
+## 构建与部署链路
+
+```
+push main
+  → setup-vp（读 .nvmrc = Node 24，代理包管理器并装依赖）
+  → vp check                 # oxfmt 格式 + oxlint + 类型，红则中断
+  → vp build                 # base = PAGES_BASE_PATH || '/'
+  → touch dist/.nojekyll     # 兜底，public/.nojekyll 通常已被拷贝
+  → configure-pages → upload-pages-artifact（include-hidden-files）→ deploy-pages
+```
+
+- **`base` 只由环境变量决定**：`PAGES_BASE_PATH` 由仓库变量注入（本站自定义域 → `/`；项目页留空 → CI 取 `/<repo>/`），代码与 `index.html` 不写死站点前缀，图标走 `%BASE_URL%`，运行时数据走 `import.meta.env.BASE_URL`。
+- **PWA 地址显式拼 base**：manifest 的 `start_url` / `scope` / `icons` 不会被 Vite 自动加前缀，配置里用 `${base}` 拼接，保证子路径部署时 SW 作用域与图标同时正确。
+- **单 tsconfig**：`src`、`vite.config.ts`、`playwright.config.ts`、`e2e/` 共享一份配置（`types: vite-plus/client + node`），不再维护 `tsconfig.node.json`。
+- **格式化边界**：`fmt.ignorePatterns` 排除 `**/*.md`，中文文档表格保持人工排版；`lint.ignorePatterns` 排除 `node_modules` / `dist`。

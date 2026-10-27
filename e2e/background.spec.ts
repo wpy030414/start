@@ -8,7 +8,7 @@ test.describe('自定义背景', () => {
     await expect(layer).toHaveClass(/default-bg/);
     const dots = layer.locator('.default-dot');
     expect(await dots.count()).toBeGreaterThan(50);
-    const color = await layer.evaluate(el => el.style.getPropertyValue('--dot-color'));
+    const color = await layer.evaluate((el) => el.style.getPropertyValue('--dot-color'));
     expect(['#3ec27a', '#ff79a6', '#ff9d3d']).toContain(color);
   });
 
@@ -25,9 +25,10 @@ test.describe('自定义背景', () => {
   test('首页 5 连点不再触发文件选择器', async ({ page }) => {
     await page.goto('/');
     for (let i = 0; i < 5; i++) await page.mouse.click(640, 330);
-    const fired = await page
-      .waitForEvent('filechooser', { timeout: 1200 })
-      .then(() => true, () => false);
+    const fired = await page.waitForEvent('filechooser', { timeout: 1200 }).then(
+      () => true,
+      () => false,
+    );
     expect(fired).toBe(false);
     await expect(page).toHaveURL(/\/$/);
   });
@@ -38,9 +39,7 @@ test.describe('自定义背景', () => {
 
     const img = page.locator('#bg-layer img');
     await expect(img).toHaveCount(1);
-    await expect
-      .poll(() => img.evaluate(el => el.style.opacity), { timeout: 4000 })
-      .toBe('1');
+    await expect.poll(() => img.evaluate((el) => el.style.opacity), { timeout: 4000 }).toBe('1');
     await expect(page.locator('#bg-layer')).not.toHaveClass(/default-bg/);
   });
 
@@ -55,12 +54,8 @@ test.describe('自定义背景', () => {
     await fc.setFiles({ name: 'bg-b.png', mimeType: 'image/png', buffer: SMALL_PNG });
 
     // 短暂共存（旧层保留至淡入完成）
-    await expect
-      .poll(() => page.locator('#bg-layer img').count(), { timeout: 2000 })
-      .toBe(2);
+    await expect.poll(() => page.locator('#bg-layer img').count(), { timeout: 2000 }).toBe(2);
     // settle 后（最多 3.5s 兜底）只剩最新一层
-    await expect
-      .poll(() => page.locator('#bg-layer img').count(), { timeout: 6000 })
-      .toBe(1);
+    await expect.poll(() => page.locator('#bg-layer img').count(), { timeout: 6000 }).toBe(1);
   });
 });

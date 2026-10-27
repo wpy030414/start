@@ -8,9 +8,9 @@
 
 一个部署在 GitHub Pages（`start.xrl.im`）上的 React 单页浏览器起始页。整体风格模仿原生 macOS Liquid Glass 悬浮层：顶部一个居中的磨砂玻璃搜索框，底部一排玻璃质感快捷链接图标，以及用户自定义的图片 / 视频背景。
 
-- **Vite 8**（Rolldown 内核）+ **React 19** + **TypeScript**，无外部状态管理库。
+- **Vite 8**（Rolldown 内核，经 **vite-plus / vp** 驱动 dev / build / preview / check）+ **React 19** + **TypeScript**，无外部状态管理库；Node 24 钉在 `.nvmrc`。
 - **vite-plugin-pwa** 2.0 生成 Service Worker（`sw.js`），`navigateFallback` + `cleanupOutdatedCaches`。
-- 构建产物 `dist/` → GitHub Actions 自动部署到 GitHub Pages。
+- 构建产物 `dist/` → GitHub Actions（setup-vp）自动部署到 GitHub Pages；`base` 由仓库变量 `PAGES_BASE_PATH` 注入（本站自定义域 → `/`），代码不推断域名或仓库名。
 - `public/worker.js` 是旧 SW 墓碑（自注销，用于迁移期驱逐旧 SW）。
 - 玻璃有两套实现：搜索卡 + 引擎按钮 + 两颗角标（左上 `+` / 右上设置）+ 每颗快捷链接由 **`@glass-sdk/liquid-glass`** 绘制真液态玻璃（WebGPU + SVG 折射滤镜），无 WebGPU 时自动回退到手写 `backdrop-filter`；其余玻璃面（面板 / 弹窗 / 拖拽代理 / `+` 变身垃圾桶时）始终是手写实现。
 
@@ -20,22 +20,23 @@
 
 ```
 start/
-├── index.html              # Vite 入口（head meta + <div id="root">）
-├── vite.config.ts          # Vite + React + VitePWA 配置
-├── playwright.config.ts    # E2E（chromium + webkit，webServer builder+preview）
-├── tsconfig.json           # src 类型检查（bundler resolution，react-jsx）
-├── tsconfig.node.json      # vite.config / playwright.config / e2e 类型检查
+├── index.html              # Vite 入口（head meta + %BASE_URL% 图标 + <div id="root">）
+├── vite.config.ts          # vp（vite-plus）配置：base/插件/别名 + fmt/lint
+├── playwright.config.ts    # E2E（chromium + webkit，webServer = pnpm build && pnpm preview）
+├── tsconfig.json           # 全量类型检查（src + vite/playwright 配置 + e2e，bundler resolution，react-jsx）
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml     # allowBuilds：显式拒绝 webgpu/@vgpu 的原生编译脚本（否则 install 退出 1）
+├── .nvmrc                  # Node 24：本地 nvm/fnm 与 CI 的 setup-vp 共用这一处
 ├── .gitignore
 ├── AGENTS.md
 ├── .github/workflows/
-│   └── deploy.yml          # push main → build → deploy-pages
+│   └── deploy.yml          # push main → vp check → vp build → deploy-pages
 ├── public/
-│   ├── CNAME               # start.xrl.im
+│   ├── CNAME               # start.xrl.im（自定义域）
+│   ├── .nojekyll           # 原样拷进 dist/，防止 Jekyll 吞掉 _ 开头的构建产物
 │   ├── 404.html            # GH Pages 冷深链兜底：/?spa=<encoded> → 应用还原路径
-│   ├── worker.js           # 旧 SW 墓碑
+│   ├── worker.js           # 旧 SW 墓碑（原样托管的纯 JS，不能写 TS 语法）
 │   └── icons/              # PWA manifest 图标（192/512/maskable）
 ├── e2e/                    # Playwright：13 个 spec + helpers 覆盖全部 MVP
 │   ├── helpers/bg.ts       # addBgViaSettings / addOneBg（经 /settings 添加背景）
@@ -113,8 +114,8 @@ start/
 - IndexedDB 事务中不在相关读写请求之间插入 `await`；需连续操作时，在一个事务内同步收集 keys/values，再为新写入创建新事务。
 - **Safari**：从 IndexedDB 取出的 File 调 `URL.createObjectURL` 可能抛出 WebKitBlobResource error 1 → 存 `{name, type, buffer}` 序列化记录、读取时从 ArrayBuffer 重建 File/Blob。blob URL 用临时 img/video 探测（2.5s 超时），失败回退 FileReader data: URL。
 - 引擎按钮 / 快捷链接图标统一 `filter: brightness(0) invert(1)` 反白；展示区（`#shortcuts-showcase`）的图标保持原色。
-- Public `worker.js` 是墓碑：install → skipWaiting，activate → 清缓存 + `self.registration.unregister()`，与 `sw-migrate.ts` 双保险确保旧 SW 被清退。
-- 构建用 `pnpm`，`pnpm typecheck && vite build`；部署文件放在 `public/`，CNAME 随构建产物到 `dist/`。
+- Public `worker.js` 是墓碑：install → skipWaiting，activate → 清缓存 + `self.registration.unregister()`，与 `sw-migrate.ts` 双保险确保旧 SW 被清退。**它被原样托管到站点根，必须是纯 JS**（写成 TS 断言会让浏览器解析即报错，墓碑静默失效）。
+- 构建与检查统一走 **vp**：`pnpm dev` / `pnpm build` / `pnpm preview` / `pnpm check`（oxfmt 格式 + oxlint + 类型，CI 同款）。`vite.config.ts` 从 `vite-plus` 导入 `defineConfig`，`base` 来自 `PAGES_BASE_PATH`，本地恒为 `/`。部署文件放在 `public/`，CNAME 与 `.nojekyll` 随构建产物到 `dist/`。`fmt.ignorePatterns` 排除 `**/*.md`（中文表格由人工排版，交给格式化器只会产生无意义 diff）。
 - **Liquid Glass（`@glass-sdk/liquid-glass`）铺在固定元素上**：`GlassScene` 包住整页、背景媒体放在 `GlassContent`（它是折射源），材质层 = 搜索卡（`capsule`）+ 三颗引擎按钮（`circle`）+ 左上 `+` / 右上设置（`capsule` / `circle`）+ 每颗快捷链接（`radius={13}`，最多 6 颗），即 6～12 颗 `GlassSurface`。库是把 SVG 折射滤镜挂在**内容层**上再按每个 surface 的矩形取样的，surface 越多、整页内容被反复过滤的次数越多，所以面板 / 弹窗 / 拖拽代理 / `+` 变身垃圾桶时一律不接（它们继续用手写 `backdrop-filter`）；同尺寸的引擎按钮与快捷链接共用同一份缓存的材质图。
 - 模式由库的就绪信号决定，写进 `html[data-glass]`（`lib/glass-mode.ts`）：先按 `css` 渲染（首帧绝不空白）→ 场景出现 surface 且 `data-glass-ready="true"` 才切 `webgpu`；`glass:diagnostic` 带 `error`（无 WebGPU 适配器 / 滤镜图超限）则永久回退 `css`。切到 `webgpu` 时 `glass.css` 会清掉这几处元素的 `background`/`border`/`box-shadow`/`backdrop-filter`（否则会在折射层上再糊一层模糊），伪元素的高光与扫光保留。
 - 没有 surface 时库也把 `data-glass-ready` 报成 `"true"`（0 个全部就绪），所以升级必须以「场景里有 `.lg-surface`」为前置条件，否则从 `/settings` 直接进首页会撤掉手写玻璃留下一个看不见的搜索框。

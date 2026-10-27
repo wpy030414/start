@@ -34,7 +34,15 @@ export default function App() {
 
   const bgStore = useBackgroundStore();
   const bgMedia = useBackgroundMedia();
-  const { state: bgState, stateRef: bgStateRef, applyFile, promoteCurrent, navigate, setCurrentIndex, remove } = bgStore;
+  const {
+    state: bgState,
+    stateRef: bgStateRef,
+    applyFile,
+    promoteCurrent,
+    navigate,
+    setCurrentIndex,
+    remove,
+  } = bgStore;
   const { layers, applyBackground, handleSettled, videoRefCb, getCurrentVideo, clearBackground } = bgMedia;
 
   // 背景循环档位：状态为源（'6'|'30'|'off'），/settings 上实时生效
@@ -51,7 +59,10 @@ export default function App() {
   }, [bgStateRef, setCurrentIndex, applyBackground]);
 
   useBgCycle({
-    stateRef: bgStateRef, onAdvance: advanceBgCycle, getCurrentVideo, mode: cycleMode,
+    stateRef: bgStateRef,
+    onAdvance: advanceBgCycle,
+    getCurrentVideo,
+    mode: cycleMode,
   });
 
   // 初次加载恢复当前背景
@@ -67,32 +78,41 @@ export default function App() {
   /* ---------- /settings 下放动作 ---------- */
 
   /** 多选添加：顺序 await（IDB 事务不交叉、crossfade 链式收敛）。 */
-  const addBackgroundFiles = useCallback(async (list: FileList | File[]) => {
-    for (const file of Array.from(list)) {
-      await applyFile(file);
-      await applyBackground(file);
-    }
-  }, [applyFile, applyBackground]);
+  const addBackgroundFiles = useCallback(
+    async (list: FileList | File[]) => {
+      for (const file of Array.from(list)) {
+        await applyFile(file);
+        await applyBackground(file);
+      }
+    },
+    [applyFile, applyBackground],
+  );
 
   /** 设为当前：置顶（promote 持久化）并应用。 */
-  const setCurrentBackground = useCallback((hash: string) => {
-    const s = bgStateRef.current;
-    const idx = s.order.indexOf(hash);
-    if (idx < 0) return;
-    const file = setCurrentIndex(idx);
-    if (!file) return;
-    void promoteCurrent();
-    void applyBackground(file);
-  }, [bgStateRef, setCurrentIndex, promoteCurrent, applyBackground]);
+  const setCurrentBackground = useCallback(
+    (hash: string) => {
+      const s = bgStateRef.current;
+      const idx = s.order.indexOf(hash);
+      if (idx < 0) return;
+      const file = setCurrentIndex(idx);
+      if (!file) return;
+      void promoteCurrent();
+      void applyBackground(file);
+    },
+    [bgStateRef, setCurrentIndex, promoteCurrent, applyBackground],
+  );
 
   /** 删除：命中当前项时切到剩余项，删空则回默认底。 */
-  const removeBackground = useCallback((hash: string) => {
-    void remove(hash).then(r => {
-      if (!r.removedCurrent) return;
-      if (r.nextFile) void applyBackground(r.nextFile);
-      else clearBackground();
-    });
-  }, [remove, applyBackground, clearBackground]);
+  const removeBackground = useCallback(
+    (hash: string) => {
+      void remove(hash).then((r) => {
+        if (!r.removedCurrent) return;
+        if (r.nextFile) void applyBackground(r.nextFile);
+        else clearBackground();
+      });
+    },
+    [remove, applyBackground, clearBackground],
+  );
 
   /* ---------- cycle 档位 setter（持久化 + 受控下放；切到 off 时 useBgCycle 自动恢复视频循环） ---------- */
 
@@ -105,12 +125,7 @@ export default function App() {
   const isDefault = bgStateRef.current.loaded && !currentFile && layers.length === 0;
 
   return (
-    <GlassScene
-      ref={sceneRef}
-      className="glass-scene"
-      material="regular"
-      appearance="light"
-    >
+    <GlassScene ref={sceneRef} className="glass-scene" material="regular" appearance="light">
       <GlassContent className="glass-content">
         <BackgroundLayer layers={layers} isDefault={isDefault} onSettled={handleSettled} videoRefCb={videoRefCb} />
       </GlassContent>

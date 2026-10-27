@@ -10,7 +10,10 @@ import { PlusIcon, TrashIcon } from './icons';
  * 玻璃材质层始终挂在同一个节点上，`fluid` 让轮廓跟着宽度变化弹性变形。
  */
 export default function AddShortcutButton({
-  rootRef, onClick, isDragging, dropHover,
+  rootRef,
+  onClick,
+  isDragging,
+  dropHover,
 }: {
   rootRef: RefObject<HTMLButtonElement | null>;
   onClick: () => void;

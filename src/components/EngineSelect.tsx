@@ -44,7 +44,7 @@ export default function EngineSelect({
   const [menuRect, setMenuRect] = useState({ top: 0, left: 0, width: 0 });
 
   const itemCount = options.length + 1; // 末位是「自定义…」
-  const presetIndex = value ? options.findIndex(o => o.id === value) : -1;
+  const presetIndex = value ? options.findIndex((o) => o.id === value) : -1;
   // 自定义引擎（或预设已下线）时，当前项落在末位的「自定义…」上
   const currentIndex = presetIndex >= 0 ? presetIndex : options.length;
 
@@ -80,7 +80,7 @@ export default function EngineSelect({
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const delta = e.key === 'ArrowDown' ? 1 : -1;
-      setActiveIndex(i => ((i < 0 ? currentIndex : i) + delta + itemCount) % itemCount);
+      setActiveIndex((i) => ((i < 0 ? currentIndex : i) + delta + itemCount) % itemCount);
     } else if (e.key === 'Enter') {
       e.preventDefault(); // 阻断原生 click，避免打开态的 Enter 把菜单关掉
       choose(activeIndex >= 0 ? activeIndex : currentIndex);

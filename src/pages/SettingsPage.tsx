@@ -2,13 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { BgStoreState } from '../hooks/useBackgroundStore';
 import { navigateTo } from '../hooks/useRoute';
 import { clearBgStore } from '../lib/db';
-import {
-  CYCLE_MODES,
-  DB_NAME,
-  ENGINE_SLOTS,
-  type CycleMode,
-  type EngineSlotEntry,
-} from '../lib/constants';
+import { CYCLE_MODES, DB_NAME, ENGINE_SLOTS, type CycleMode, type EngineSlotEntry } from '../lib/constants';
 import { loadSlotEntries, saveSlotEntries } from '../lib/engines';
 import ConfirmDialog from '../components/ConfirmDialog';
 import CustomEngineDialog from '../components/CustomEngineDialog';
@@ -46,7 +40,11 @@ function BgThumb({ file }: { file: File }) {
     }
     setUrl(u);
     return () => {
-      try { URL.revokeObjectURL(u); } catch { /* noop */ }
+      try {
+        URL.revokeObjectURL(u);
+      } catch {
+        /* noop */
+      }
     };
   }, [file]);
 
@@ -62,8 +60,12 @@ function BgThumb({ file }: { file: File }) {
         muted
         playsInline
         preload="metadata"
-        onLoadedMetadata={e => {
-          try { e.currentTarget.currentTime = 0.1; } catch { /* noop */ } // Chromium 出首帧
+        onLoadedMetadata={(e) => {
+          try {
+            e.currentTarget.currentTime = 0.1;
+          } catch {
+            /* noop */
+          } // Chromium 出首帧
         }}
         onError={() => setFailed(true)}
       />
@@ -79,19 +81,27 @@ function BgThumb({ file }: { file: File }) {
  * - 缓存清空后即使用户仍被旧 SW 控页，刷新也会回落到网络，拿到全新外壳。
  */
 async function wipeAllSiteData(): Promise<void> {
-  try { localStorage.clear(); } catch { /* noop */ }
+  try {
+    localStorage.clear();
+  } catch {
+    /* noop */
+  }
 
   try {
     if ('caches' in window) {
       for (const key of await caches.keys()) await caches.delete(key);
     }
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 
   try {
     if ('serviceWorker' in navigator) {
       for (const reg of await navigator.serviceWorker.getRegistrations()) await reg.unregister();
     }
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 
   await clearBgStore();
 
@@ -100,7 +110,9 @@ async function wipeAllSiteData(): Promise<void> {
     for (const info of await indexedDB.databases()) {
       if (info.name && info.name !== DB_NAME) indexedDB.deleteDatabase(info.name);
     }
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 }
 
 /** /settings：背景（管理 + 循环档位）+ 搜索引擎（槽位替换）+ 标题行「清除所有数据」。 */
@@ -121,7 +133,7 @@ export default function SettingsPage({
   const [customSlot, setCustomSlot] = useState<number | null>(null);
 
   function selectPreset(i: number, entry: EngineSlotEntry) {
-    setSlots(prev => {
+    setSlots((prev) => {
       const next = prev.map((s, idx) => (idx === i ? entry : s));
       saveSlotEntries(next);
       return next;
@@ -130,7 +142,7 @@ export default function SettingsPage({
 
   function setCustom(i: number, name: string, urlTemplate: string, home: string) {
     const entry: EngineSlotEntry = { id: '', name, urlTemplate, home };
-    setSlots(prev => {
+    setSlots((prev) => {
       const next = prev.map((s, idx) => (idx === i ? entry : s));
       saveSlotEntries(next);
       return next;
@@ -151,7 +163,7 @@ export default function SettingsPage({
           <a
             id="settings-back"
             href="/"
-            onClick={e => {
+            onClick={(e) => {
               if (!isPlainLeftClick(e)) return;
               e.preventDefault();
               navigateTo('/');
@@ -160,12 +172,7 @@ export default function SettingsPage({
             ← 返回
           </a>
           <h2>设置</h2>
-          <button
-            type="button"
-            className="setting-reset"
-            id="setting-reset"
-            onClick={() => setConfirmOpen(true)}
-          >
+          <button type="button" className="setting-reset" id="setting-reset" onClick={() => setConfirmOpen(true)}>
             清除所有数据
           </button>
         </div>
@@ -182,7 +189,7 @@ export default function SettingsPage({
             hidden
             multiple
             accept="image/*,video/*"
-            onChange={e => {
+            onChange={(e) => {
               const fs = e.target.files;
               if (fs && fs.length) void addBackgroundFiles(fs);
               e.target.value = ''; // 允许重复选择同一文件
@@ -190,17 +197,12 @@ export default function SettingsPage({
           />
           {bgState.loaded && bgState.order.length === 0 && <p className="bg-empty">暂无背景</p>}
           <div className="bg-grid">
-            {bgState.order.map(hash => {
+            {bgState.order.map((hash) => {
               const file = bgState.files.get(hash);
               if (!file) return null;
               const isCurrent = bgState.currentHash === hash;
               return (
-                <div
-                  key={hash}
-                  className={`bg-item${isCurrent ? ' current' : ''}`}
-                  data-hash={hash}
-                  title={file.name}
-                >
+                <div key={hash} className={`bg-item${isCurrent ? ' current' : ''}`} data-hash={hash} title={file.name}>
                   <BgThumb file={file} />
                   <div className="bg-item-actions">
                     <button
@@ -235,7 +237,7 @@ export default function SettingsPage({
               max={CYCLE_MODES.length - 1}
               step={1}
               value={CYCLE_MODES.indexOf(cycleMode)}
-              onChange={e => onCycleModeChange(CYCLE_MODES[Number(e.target.value)] ?? 'off')}
+              onChange={(e) => onCycleModeChange(CYCLE_MODES[Number(e.target.value)] ?? 'off')}
               aria-label="循环播放周期"
             />
             <div className="slider-ticks" aria-hidden="true">
@@ -261,12 +263,14 @@ export default function SettingsPage({
                     label={isCustom ? `${entry.name}（自定义）` : entry.name}
                     ariaLabel={`替换第 ${i + 1} 个搜索引擎`}
                     dataSlot={i}
-                    onSelect={preset => selectPreset(i, {
-                      id: preset.id,
-                      name: preset.name,
-                      urlTemplate: preset.urlTemplate,
-                      home: preset.home,
-                    })}
+                    onSelect={(preset) =>
+                      selectPreset(i, {
+                        id: preset.id,
+                        name: preset.name,
+                        urlTemplate: preset.urlTemplate,
+                        home: preset.home,
+                      })
+                    }
                     onCustom={() => setCustomSlot(i)}
                   />
                 </div>
@@ -280,10 +284,10 @@ export default function SettingsPage({
         open={confirmOpen}
         title="清除所有数据"
         message={
-          '确定清除所有数据吗？\n\n'
-          + '将删除：搜索历史、快捷链接、引擎设置、循环设置、全部背景，'
-          + '以及离线缓存与 Service Worker 注册。\n\n'
-          + '此操作不可恢复。'
+          '确定清除所有数据吗？\n\n' +
+          '将删除：搜索历史、快捷链接、引擎设置、循环设置、全部背景，' +
+          '以及离线缓存与 Service Worker 注册。\n\n' +
+          '此操作不可恢复。'
         }
         confirmLabel="清除"
         danger
@@ -296,11 +300,15 @@ export default function SettingsPage({
         open={customSlot !== null}
         initial={
           editingEntry && !editingEntry.id
-            ? { name: editingEntry.name, urlTemplate: editingEntry.urlTemplate, home: editingEntry.home }
+            ? {
+                name: editingEntry.name,
+                urlTemplate: editingEntry.urlTemplate,
+                home: editingEntry.home,
+              }
             : { name: '', urlTemplate: '', home: '' }
         }
         onCancel={() => setCustomSlot(null)}
-        onSubmit={values => {
+        onSubmit={(values) => {
           if (customSlot === null) return;
           setCustom(customSlot, values.name, values.urlTemplate, values.home);
           setCustomSlot(null);

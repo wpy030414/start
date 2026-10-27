@@ -46,12 +46,14 @@ export default function ConfirmDialog({
     <div
       className={`modal-mask${open ? ' open' : ''}`}
       aria-hidden={!open}
-      onClick={e => {
+      onClick={(e) => {
         if (e.target === e.currentTarget) cancelRef.current();
       }}
     >
       <div className="modal-panel" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <h3 className="modal-title" id={titleId}>{title}</h3>
+        <h3 className="modal-title" id={titleId}>
+          {title}
+        </h3>
         <p className="modal-message">{message}</p>
         <div className="modal-actions">
           <button

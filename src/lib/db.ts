@@ -32,7 +32,7 @@ export function openDB(): Promise<IDBDatabase> {
         db.createObjectStore(STORE_NAME);
       }
       // 清理历史版本可能遗留的其他仓库
-      const storesToDelete = Array.from(db.objectStoreNames).filter(n => n !== STORE_NAME);
+      const storesToDelete = Array.from(db.objectStoreNames).filter((n) => n !== STORE_NAME);
       for (const n of storesToDelete) db.deleteObjectStore(n);
     };
     req.onsuccess = () => resolve(req.result);
@@ -47,7 +47,7 @@ async function bgRecordFromFile(file: File): Promise<BgRecord> {
     type: file.type || '',
     size: file.size,
     lastModified: file.lastModified || 0,
-    buffer
+    buffer,
   };
 }
 
@@ -55,7 +55,7 @@ function fileFromRecord(rec: BgRecord): File {
   const blob = new Blob([rec.buffer], { type: rec.type || 'application/octet-stream' });
   return new File([blob], rec.name || 'background', {
     type: rec.type || 'application/octet-stream',
-    lastModified: rec.lastModified || Date.now()
+    lastModified: rec.lastModified || Date.now(),
   });
 }
 
@@ -86,7 +86,7 @@ export async function loadBgStore(): Promise<BgStoreData> {
       }
     }
     // 顺序与文件不一致时清理孤儿 hash
-    return { order: orderArr.filter(h => files.has(h)), files };
+    return { order: orderArr.filter((h) => files.has(h)), files };
   } catch (err) {
     console.warn('背景存储加载失败:', err);
     return { order: [], files: new Map() };
@@ -118,7 +118,8 @@ export async function persistBgStore(order: string[], files: Map<string, File>):
       r.onerror = () => rej(r.error);
     });
     for (const k of allKeys) {
-      if (k === ORDER_KEY || files.has(String(k))) continue;
+      // hash 一定是字符串；非字符串键（如 Date / ArrayBuffer）不可能命中 files
+      if (k === ORDER_KEY || (typeof k === 'string' && files.has(k))) continue;
       store.delete(k);
     }
 
@@ -137,12 +138,16 @@ export async function clearBgStore(): Promise<void> {
     const db = await openDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).clear();
-    await new Promise<void>(res => {
+    await new Promise<void>((res) => {
       tx.oncomplete = () => res();
       tx.onerror = () => res();
       tx.onabort = () => res();
     });
-    try { db.close(); } catch { /* noop */ }
+    try {
+      db.close();
+    } catch {
+      /* noop */
+    }
   } catch (err) {
     console.warn('重置背景数据失败:', err);
   }

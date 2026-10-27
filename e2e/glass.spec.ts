@@ -30,11 +30,7 @@ async function backdropFilter(page: Page, selector: string): Promise<string> {
       const cs = getComputedStyle(el);
       // Chromium 只认标准属性，Safari 认前缀版；任一有值即视为这颗玻璃还活着。
       // 用 getPropertyValue 而非驼峰属性：TS 的 CSSStyleDeclaration 未声明 webkitBackdropFilter。
-      return (
-        cs.getPropertyValue('backdrop-filter') ||
-        cs.getPropertyValue('-webkit-backdrop-filter') ||
-        'none'
-      );
+      return cs.getPropertyValue('backdrop-filter') || cs.getPropertyValue('-webkit-backdrop-filter') || 'none';
     });
 }
 
@@ -48,7 +44,7 @@ test.describe('玻璃在构建产物中存活', () => {
     // 模式锚点必须在：降级样式与材质层的交接全靠它
     expect(
       await page.locator('html').getAttribute('data-glass'),
-      'html[data-glass] 是两套玻璃的切换锚点，不能为空'
+      'html[data-glass] 是两套玻璃的切换锚点，不能为空',
     ).not.toBeNull();
 
     // GlassContent 外面套着库自己的透明 wrapper（data-glass-blur-host），故不写直接子选择器
@@ -73,10 +69,13 @@ test.describe('玻璃在构建产物中存活', () => {
   test('每颗快捷链接也是玻璃面', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://a.com', title: 'A', favicon: '' },
-        { url: 'https://b.com', title: 'B', favicon: '' },
-      ]))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify([
+          { url: 'https://a.com', title: 'A', favicon: '' },
+          { url: 'https://b.com', title: 'B', favicon: '' },
+        ]),
+      ),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(2);

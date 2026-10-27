@@ -35,7 +35,7 @@ function bufferToDataUrl(buf: ArrayBuffer, type: string): Promise<string> {
 
 // 通过临时 img/video 探测 blob URL 是否可用（loadedmetadata/load 成功，2.5s 超时判否）
 function probeObjectUrl(url: string, type: string): Promise<boolean> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let settled = false;
     let timer: ReturnType<typeof setTimeout>;
     const done = (ok: boolean) => {
@@ -87,7 +87,11 @@ export async function resolveBgSrc(file: File): Promise<string> {
     console.warn('object URL failed:', err);
   }
   if (url) {
-    try { URL.revokeObjectURL(url); } catch { /* noop */ }
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* noop */
+    }
   }
 
   // Safari WebKitBlobResource error 1 回退：arrayBuffer + FileReader 生成 data: URL

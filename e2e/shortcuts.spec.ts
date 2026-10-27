@@ -24,9 +24,7 @@ test.describe('快捷链接', () => {
   test('localStorage 存数据后渲染正确', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://example.com', title: 'Test', favicon: '' },
-      ]))
+      localStorage.setItem('shortcuts', JSON.stringify([{ url: 'https://example.com', title: 'Test', favicon: '' }])),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(1);
@@ -51,11 +49,14 @@ test.describe('快捷链接', () => {
   test('dock mouseenter sets --sc', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://a.com', title: 'A', favicon: '' },
-        { url: 'https://b.com', title: 'B', favicon: '' },
-        { url: 'https://c.com', title: 'C', favicon: '' },
-      ]))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify([
+          { url: 'https://a.com', title: 'A', favicon: '' },
+          { url: 'https://b.com', title: 'B', favicon: '' },
+          { url: 'https://c.com', title: 'C', favicon: '' },
+        ]),
+      ),
     );
     await page.reload();
     const items = page.locator('#shortcuts-showcase .shortcut-item');
@@ -63,16 +64,23 @@ test.describe('快捷链接', () => {
     const box = await items.nth(1).boundingBox();
     if (box) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(500);
-    const sc = await items.nth(1).evaluate(el => el.style.getPropertyValue('--sc'));
+    const sc = await items.nth(1).evaluate((el) => el.style.getPropertyValue('--sc'));
     expect(sc).toBeTruthy();
   });
 
   test('上限为 6 个', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify(
-        Array.from({ length: 7 }, (_, j) => ({ url: `https://x${j}.com`, title: `X${j}`, favicon: '' }))
-      ))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify(
+          Array.from({ length: 7 }, (_, j) => ({
+            url: `https://x${j}.com`,
+            title: `X${j}`,
+            favicon: '',
+          })),
+        ),
+      ),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(6);
@@ -81,10 +89,13 @@ test.describe('快捷链接', () => {
   test('删除逻辑通过 localStorage 验证', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('shortcuts', JSON.stringify([
-        { url: 'https://a.com', title: 'A', favicon: '' },
-        { url: 'https://b.com', title: 'B', favicon: '' },
-      ]))
+      localStorage.setItem(
+        'shortcuts',
+        JSON.stringify([
+          { url: 'https://a.com', title: 'A', favicon: '' },
+          { url: 'https://b.com', title: 'B', favicon: '' },
+        ]),
+      ),
     );
     await page.reload();
     await expect(page.locator('#shortcuts-showcase .shortcut-item')).toHaveCount(2);

@@ -16,7 +16,7 @@ const INITIAL: BgStoreState = {
   files: new Map(),
   currentHash: null,
   currentIndex: -1,
-  loaded: false
+  loaded: false,
 };
 
 /**
@@ -34,7 +34,7 @@ export function useBackgroundStore() {
     void (async () => {
       const store = await loadBgStore();
       if (cancelled) return;
-      setState(prev => {
+      setState((prev) => {
         let currentHash = prev.currentHash;
         let currentIndex = prev.currentIndex;
         if (!currentHash && store.order.length) {
@@ -57,7 +57,7 @@ export function useBackgroundStore() {
   const applyFile = useCallback(async (file: File): Promise<void> => {
     const hash = bgHash(file);
     const s = stateRef.current;
-    const order = s.order.filter(h => h !== hash);
+    const order = s.order.filter((h) => h !== hash);
     order.unshift(hash);
     const files = new Map(s.files);
     files.set(hash, file);
@@ -76,7 +76,7 @@ export function useBackgroundStore() {
     const s = stateRef.current;
     const hash = s.order[s.currentIndex];
     if (!hash) return;
-    const order = s.order.filter(h => h !== hash);
+    const order = s.order.filter((h) => h !== hash);
     order.unshift(hash);
     const next: BgStoreState = { ...s, order, currentHash: hash, currentIndex: 0 };
     stateRef.current = next;
@@ -93,8 +93,7 @@ export function useBackgroundStore() {
     if (s.order.length === 0) return null;
     let index = s.currentIndex;
     if (index < 0) index = 0;
-    const nextIndex =
-      delta === 1 ? Math.min(s.order.length - 1, index + 1) : Math.max(0, index - 1);
+    const nextIndex = delta === 1 ? Math.min(s.order.length - 1, index + 1) : Math.max(0, index - 1);
     if (nextIndex === index) return null;
     const hash = s.order[nextIndex];
     if (!hash) return null;
@@ -120,30 +119,35 @@ export function useBackgroundStore() {
   }, []);
 
   /** 删除单个背景。返回是否命中当前项、以及剩余应展示的下一个文件。 */
-  const remove = useCallback(async (hash: string): Promise<{
-    removedCurrent: boolean;
-    nextFile: File | null;
-  }> => {
-    const s = stateRef.current;
-    if (!s.files.has(hash)) return { removedCurrent: false, nextFile: null };
-    const index = s.order.indexOf(hash);
-    const order = s.order.filter(h => h !== hash);
-    const files = new Map(s.files);
-    files.delete(hash);
-    const removedCurrent = s.currentHash === hash;
-    let { currentHash, currentIndex } = s;
-    if (removedCurrent) {
-      currentHash = order[0] ?? null;
-      currentIndex = order.length ? 0 : -1;
-    } else if (index >= 0 && index < currentIndex) {
-      currentIndex -= 1; // 删除的是当前项之前的项，索引左移
-    }
-    const next: BgStoreState = { ...s, order, files, currentHash, currentIndex };
-    stateRef.current = next;
-    setState(next);
-    await persistBgStore(order, files); // 同事务清理已删除的记录 key
-    return { removedCurrent, nextFile: currentHash ? files.get(currentHash) ?? null : null };
-  }, []);
+  const remove = useCallback(
+    async (
+      hash: string,
+    ): Promise<{
+      removedCurrent: boolean;
+      nextFile: File | null;
+    }> => {
+      const s = stateRef.current;
+      if (!s.files.has(hash)) return { removedCurrent: false, nextFile: null };
+      const index = s.order.indexOf(hash);
+      const order = s.order.filter((h) => h !== hash);
+      const files = new Map(s.files);
+      files.delete(hash);
+      const removedCurrent = s.currentHash === hash;
+      let { currentHash, currentIndex } = s;
+      if (removedCurrent) {
+        currentHash = order[0] ?? null;
+        currentIndex = order.length ? 0 : -1;
+      } else if (index >= 0 && index < currentIndex) {
+        currentIndex -= 1; // 删除的是当前项之前的项，索引左移
+      }
+      const next: BgStoreState = { ...s, order, files, currentHash, currentIndex };
+      stateRef.current = next;
+      setState(next);
+      await persistBgStore(order, files); // 同事务清理已删除的记录 key
+      return { removedCurrent, nextFile: currentHash ? (files.get(currentHash) ?? null) : null };
+    },
+    [],
+  );
 
   const getFile = useCallback((hash: string | null): File | null => {
     if (!hash) return null;

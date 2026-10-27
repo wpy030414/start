@@ -3,10 +3,10 @@ import { bgHash } from '../lib/bg-hash';
 import { getActiveBgSrc, resetActiveBg, resolveBgSrc } from '../lib/media-url';
 
 export interface BgLayer {
-  key: string;                 // hash，React key 兼作层身份
+  key: string; // hash，React key 兼作层身份
   kind: 'image' | 'video';
   src: string;
-  prevSrc: string | null;      // 本层淡入完成后应 revoke 的旧 src
+  prevSrc: string | null; // 本层淡入完成后应 revoke 的旧 src
 }
 
 /**
@@ -32,19 +32,23 @@ export function useBackgroundMedia() {
     if (intentRef.current !== hash) return; // 已有更新的请求，放弃本次
     if (!url) return;
     const kind = (file.type || '').startsWith('video/') ? 'video' : 'image';
-    setLayers(prev => [...prev, { key: hash, kind, src: url, prevSrc }]);
+    setLayers((prev) => [...prev, { key: hash, kind, src: url, prevSrc }]);
   }, []);
 
   const handleSettled = useCallback((key: string) => {
     const prev = layersRef.current;
-    const idx = prev.findIndex(l => l.key === key);
+    const idx = prev.findIndex((l) => l.key === key);
     if (idx < 0) return;
     const layer = prev[idx];
     if (layer.prevSrc && layer.prevSrc !== layer.src && layer.prevSrc.startsWith('blob:')) {
-      try { URL.revokeObjectURL(layer.prevSrc); } catch { /* noop */ }
+      try {
+        URL.revokeObjectURL(layer.prevSrc);
+      } catch {
+        /* noop */
+      }
     }
-    setLayers(cur => {
-      const i = cur.findIndex(l => l.key === key);
+    setLayers((cur) => {
+      const i = cur.findIndex((l) => l.key === key);
       return i < 0 ? cur : cur.slice(i);
     });
   }, []);
@@ -67,7 +71,11 @@ export function useBackgroundMedia() {
     for (const l of layersRef.current) {
       for (const u of [l.src, l.prevSrc]) {
         if (u && u.startsWith('blob:')) {
-          try { URL.revokeObjectURL(u); } catch { /* noop */ }
+          try {
+            URL.revokeObjectURL(u);
+          } catch {
+            /* noop */
+          }
         }
       }
     }

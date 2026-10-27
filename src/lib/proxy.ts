@@ -48,7 +48,7 @@ export async function tryFetchTitleAndFavicon(url: string): Promise<FetchedMeta>
       let raw = linkMatch[1];
       if (raw.startsWith('//')) raw = 'https:' + raw;
       else if (raw.startsWith('/')) raw = new URL(url).origin + raw;
-      else if (!/^https?:\/\//i.test(raw)) raw = new URL(url).href.replace(/\/[^\/]*$/, '/') + raw;
+      else if (!/^https?:\/\//i.test(raw)) raw = new URL(url).href.replace(/\/[^/]*$/, '/') + raw;
       favicon = PROXY + encodeURIComponent(raw);
     }
     return { title, favicon };

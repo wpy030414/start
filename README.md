@@ -15,19 +15,24 @@
 
 ## 如何安装和运行？
 
-- **前置要求**：Node.js 22+、pnpm 12+
+- **前置要求**：Node.js 24（版本钉在 `.nvmrc`）、[vp](https://viteplus.dev)（`vite-plus` 已作为 devDependency 安装，无需全局装）
 - **安装步骤**：
   ```bash
-  pnpm install
+  vp install      # 依据 lockfile 自动代理 pnpm
   ```
 - **运行 / 启动**：
   ```bash
-  pnpm dev        # 开发服务器（Vite HMR）
-  pnpm build      # 生产构建 → dist/
-  pnpm preview    # 本地预览构建产物（端口 4173）
+  pnpm dev        # 开发服务器（vp dev，HMR）
+  pnpm build      # 生产构建 → dist/（vp build）
+  pnpm preview    # 本地预览构建产物（http://localhost:4173）
+  pnpm check      # 格式 + lint + 类型（vp check，CI 同款）
   pnpm e2e        # Playwright E2E 测试
   pnpm e2e:headed # 有头模式调试
   ```
+- **部署**：
+  - `push main` 触发 `.github/workflows/deploy.yml`：`vp check` → `vp build` → 发布 Pages。
+  - `base` 由仓库变量 `PAGES_BASE_PATH` 注入，代码不做任何域名 / 仓库名推断。本站走自定义域 `start.xrl.im`，因此该变量必须设为 `/`（项目页则留空，CI 自动取 `/<repo>/`）。
+
 
 ## 当前状态
 
@@ -41,9 +46,9 @@
 
 ## 核心技术
 
-- **语言 / 框架 / 关键依赖**：TypeScript + React 19 + Vite 8（Rolldown 内核）+ vite-plugin-pwa + Playwright E2E
+- **语言 / 框架 / 关键依赖**：TypeScript + React 19 + Vite 8（Rolldown 内核，经 vite-plus / vp 驱动）+ vite-plugin-pwa + Playwright E2E
 - **无外部状态管理库**：状态全部自定义 hooks
 - **无外部路由库**：`useRoute` 手写 pushState + 手动派发 popstate
 - **背景存储**：IndexedDB（序列化 File 兼容 Safari）
-- **部署**：GitHub Actions → GitHub Pages（`start.xrl.im`）
-- **离线**：VitePWA navigateFallback + workbox precache
+- **部署**：GitHub Actions（setup-vp）→ GitHub Pages（`start.xrl.im`），`base` 由 `PAGES_BASE_PATH` 注入
+- **离线**：VitePWA navigateFallback + workbox precache，`public/.nojekyll` 保证 `_` 开头资源不被 Jekyll 丢弃
