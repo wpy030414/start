@@ -108,7 +108,7 @@ useBgCycle effect（依赖 mode / currentIndex / order）
 
 | 外部系统 | 用途 |
 |----------|------|
-| GitHub Pages + GitHub Actions | 静态托管 + CI/CD（push prod → build → deploy） |
+| GitHub Pages + GitHub Actions | 静态托管 + CI/CD（push main → build → deploy） |
 | `p.xrl.im` 反代 | 跨域抓取快捷链接标题 / favicon |
 | 千问 / 必应 / 哔哩哔哩等搜索引擎 | 搜索跳转目标 |
 | VitePWA (workbox) | Service Worker 生成与 precache |

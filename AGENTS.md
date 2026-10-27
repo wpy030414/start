@@ -31,7 +31,7 @@ start/
 ├── .gitignore
 ├── AGENTS.md
 ├── .github/workflows/
-│   └── deploy.yml          # push prod → build → deploy-pages
+│   └── deploy.yml          # push main → build → deploy-pages
 ├── public/
 │   ├── CNAME               # start.xrl.im
 │   ├── 404.html            # GH Pages 冷深链兜底：/?spa=<encoded> → 应用还原路径
